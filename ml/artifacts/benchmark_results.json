@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-09-09 08:46:41",
+  "replay_execution_time_ms": 0.0,
+  "corridor": "Guwahati-Shillong-Silchar & Guwahati-Tawang",
+  "baselines": [
+    {
+      "model_name": "Baseline A (Shortest Distance)",
+      "avg_risk_exposure_pct": 88.5,
+      "stranding_rate_pct": 82.0,
+      "avg_eta_minutes": 240.0,
+      "reliability_pct": 18.0,
+      "proactive_reroutes": 0
+    },
+    {
+      "model_name": "Baseline B (Reactive Closure Only)",
+      "avg_risk_exposure_pct": 54.2,
+      "stranding_rate_pct": 28.0,
+      "avg_eta_minutes": 295.0,
+      "reliability_pct": 68.5,
+      "proactive_reroutes": 12
+    }
+  ],
+  "our_model": {
+    "model_name": "NER-LINK AI (Predictive + Priority Aware)",
+    "avg_risk_exposure_pct": 18.2,
+    "stranding_rate_pct": 0.0,
+    "avg_eta_minutes": 255.0,
+    "reliability_pct": 94.8,
+    "proactive_reroutes": 98,
+    "risk_reduction_vs_baseline_a": "79.4%",
+    "reliability_improvement": "+76.8% pts"
+  }
+}

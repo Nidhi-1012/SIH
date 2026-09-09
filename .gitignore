@@ -1,0 +1,57 @@
+# ============================================================
+# NER-LINK AI — Git Ignore
+# ============================================================
+
+# Environment & Secrets — NEVER commit these
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+backend/venv/
+venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Node / Frontend
+frontend/node_modules/
+mobile/node_modules/
+*.log
+npm-debug.log*
+
+# ML artifacts
+ml/models/*.pkl
+ml/models/*.joblib
+ml/models/*.h5
+ml/__pycache__/
+
+# Database
+*.db
+*.sqlite3
+data/*.db
+
+# Docker volumes / local data
+data/osm/
+data/cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase credentials
+backend/credentials/*.json
+
+*.mht

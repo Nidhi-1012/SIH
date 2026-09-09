@@ -1,0 +1,15 @@
+{
+  "champion_model": "RandomForestClassifier",
+  "roc_auc": 0.9893,
+  "f1_score": 0.9868,
+  "feature_importances": {
+    "rainfall_1h": 0.0514,
+    "rainfall_6h": 0.1234,
+    "rainfall_24h": 0.1642,
+    "forecast_24h_rain": 0.1319,
+    "slope_deg": 0.2286,
+    "landslide_susceptibility": 0.1106,
+    "soil_saturation": 0.1382,
+    "incident_count": 0.0518
+  }
+}
