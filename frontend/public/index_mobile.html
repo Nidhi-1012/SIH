@@ -1,1106 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta name="theme-color" content="#1a73e8"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="description" content="NER SafeRoute - AI-Powered Landslide Risk Navigation for North East India"/>
+<meta name="theme-color" content="#ffffff"/>
 <title>NER SafeRoute — AI Safe Navigation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 /* =============================================================
-   DESIGN TOKENS
+   APPLE-INSPIRED DESIGN SYSTEM
 ============================================================= */
-:root{
-  --c-primary:#1a73e8;
-  --c-primary-dk:#1557b0;
-  --c-primary-lt:#e8f0fe;
-  --c-safe:#1e8e3e;
-  --c-safe-bg:#e6f4ea;
-  --c-safe-border:#a8dab5;
-  --c-warn:#b06000;
-  --c-warn-bg:#fef7e0;
-  --c-high:#c26401;
-  --c-high-bg:#fff0e0;
-  --c-crit:#d93025;
-  --c-crit-bg:#fce8e6;
-  --c-crit-border:#f9ab9f;
-  --c-surface:#fff;
-  --c-bg:#f1f3f4;
-  --c-border:#dadce0;
-  --c-text:#202124;
-  --c-text-2:#5f6368;
-  --c-text-3:#80868b;
-  --r-sm:10px;
-  --r-md:16px;
-  --r-lg:22px;
-  --sh-sm:0 1px 4px rgba(60,64,67,.12),0 1px 2px rgba(60,64,67,.08);
-  --sh-md:0 4px 14px rgba(60,64,67,.15);
-  --sh-lg:0 8px 28px rgba(60,64,67,.20);
-  --sidebar-w:400px;
-  --panel-anim:.28s cubic-bezier(.4,0,.2,1);
+:root {
+  --c-text: #1d1d1f;
+  --c-text-2: #86868b;
+  --c-text-3: #98989d;
+  --c-bg: #f5f5f7;
+  --c-surface: #ffffff;
+  --c-border: rgba(0,0,0,0.08);
+  --c-primary: #0071e3;
+  --c-safe: #34c759;
+  --c-warn: #ff9f0a;
+  --c-crit: #ff3b30;
+  
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+  
+  --r-md: 10px;
+  --r-lg: 14px;
+  --sidebar-w: 360px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--c-bg); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--c-text); font-size: 14px; overflow: hidden; }
+button, input, textarea { font-family: inherit; font-size: inherit; outline: none; border: none; background: none; }
+button { cursor: pointer; }
+svg { display: block; flex-shrink: 0; }
+
+/* =============================================================
+   LAYOUT SHELL
+============================================================= */
+#shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* TOP NAVBAR */
+.apple-nav {
+  height: 56px; flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--c-border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; z-index: 1000; position: relative;
+}
+.nav-left { display: flex; align-items: center; gap: 8px; }
+.brand-name { font-weight: 600; font-size: 15px; letter-spacing: -0.2px; }
+
+.nav-center { display: flex; align-items: center; gap: 6px; }
+.nav-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: var(--c-text);
+  transition: background 0.15s;
+}
+.nav-btn:hover { background: rgba(0,0,0,0.05); }
+.nav-btn svg { color: var(--c-text-2); }
+.nav-btn:hover svg { color: var(--c-text); }
+
+.nav-btn.sos-nav { color: var(--c-crit); background: rgba(255,59,48,0.08); font-weight: 600; }
+.nav-btn.sos-nav svg { color: var(--c-crit); }
+.nav-btn.sos-nav:hover { background: rgba(255,59,48,0.15); }
+
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.wx-widget {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--c-text);
+  transition: background 0.15s;
+}
+.wx-widget:hover { background: rgba(0,0,0,0.05); }
+.wx-widget svg { color: var(--c-primary); }
+.lang-btn { font-size: 12px; font-weight: 600; color: var(--c-text-2); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--c-border); }
+
+/* MAIN AREA */
+.main-content { display: flex; flex: 1; position: relative; overflow: hidden; }
+
+/* SIDEBAR */
+#sidebar {
+  width: var(--sidebar-w); background: rgba(250, 250, 252, 0.8);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--c-border);
+  display: flex; flex-direction: column; z-index: 20; padding: 20px; overflow-y: auto; gap: 24px;
+}
+#map-area { flex: 1; position: relative; z-index: 10; }
+#the-map { position: absolute; inset: 0; }
+
+/* =============================================================
+   MOBILE ADAPTATIONS
+============================================================= */
+@media(max-width: 767px) {
+  .apple-nav { padding: 0 12px; }
+  .brand-name { display: none; }
+  .nav-btn .lbl { display: none; }
+  .nav-btn { padding: 8px; }
+  .wx-txt { display: none; }
+  #sidebar { display: none; }
 }
 
 /* =============================================================
-   RESET & BASE
+   WEATHER POPOVER
 ============================================================= */
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:#e8eaed;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--c-text);font-size:15px;overflow:hidden}
-button,input,textarea{font-family:inherit;font-size:inherit}
-button{cursor:pointer;border:none;background:none}
-input,textarea{outline:none}
-svg{display:block;flex-shrink:0}
+.wx-popover {
+  position: absolute; top: 64px; right: 20px; width: 260px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(25px); -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border: 1px solid rgba(0,0,0,0.08); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg); padding: 16px; z-index: 2000;
+  opacity: 0; transform: translateY(-10px); pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.wx-popover.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.wx-pop-title { font-size: 11px; font-weight: 600; color: var(--c-text-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.wx-pop-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--c-border); }
+.wx-pop-row:last-child { border-bottom: none; padding-bottom: 0; }
 
 /* =============================================================
-   APP SHELL — responsive grid
-   Mobile:  map fills screen, panels float/overlay
-   Tablet:  side panel 360px | map
-   Desktop: side panel 400px | map
+   UI COMPONENTS (Cards, Buttons, Inputs)
 ============================================================= */
-#shell{
-  position:fixed;inset:0;
-  display:grid;
-  grid-template-columns:1fr;
-  grid-template-rows:1fr;
-}
-@media(min-width:768px){
-  #shell{grid-template-columns:var(--sidebar-w) 1fr;}
-}
-@media(min-width:1280px){
-  --sidebar-w:440px;
-}
+.card { background: var(--c-surface); border-radius: var(--r-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); padding: 16px; }
+.sec-title { font-size: 12px; font-weight: 600; color: var(--c-text-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 
-/* MAP AREA */
-#map-area{
-  grid-row:1;grid-column:1;
-  position:relative;
-  z-index:0;
-}
-@media(min-width:768px){
-  #map-area{grid-column:2;}
-}
-#the-map{position:absolute;inset:0;}
+.search-field { display: flex; align-items: center; gap: 10px; background: var(--c-bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid transparent; transition: border 0.2s; }
+.search-field:focus-within { border-color: var(--c-primary); background: var(--c-surface); }
+.search-field input { flex: 1; font-size: 14px; color: var(--c-text); width: 100%; }
+.search-field input::placeholder { color: var(--c-text-3); }
 
-/* SIDEBAR PANEL (desktop/tablet) */
-#sidebar{
-  grid-row:1;grid-column:1;
-  background:var(--c-bg);
-  display:flex;
-  flex-direction:column;
-  height:100%;
-  overflow:hidden;
-  z-index:20;
-  box-shadow:var(--sh-lg);
-}
-/* on mobile: sidebar is hidden, content floats over map */
-@media(max-width:767px){
-  #sidebar{display:none;}
-}
+.dot-origin { width: 10px; height: 10px; border-radius: 50%; background: var(--c-primary); box-shadow: 0 0 0 3px rgba(0,113,227,0.2); }
+.dot-dest { width: 10px; height: 10px; border-radius: 3px; background: var(--c-crit); box-shadow: 0 0 0 3px rgba(255,59,48,0.2); }
+
+.btn-primary { width: 100%; padding: 12px; background: var(--c-primary); color: #fff; border-radius: 10px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.1s, opacity 0.15s; }
+.btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+.chips-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-bottom: 12px; }
+.chips-row::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 16px; padding: 6px 12px; font-size: 12px; font-weight: 500; color: var(--c-text); transition: background 0.15s; }
+.chip:active { background: var(--c-border); }
+
+.live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--c-safe); }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-safe); animation: livepulse 2s infinite; }
+@keyframes livepulse { 0% { box-shadow: 0 0 0 0 rgba(52,199,89,0.5); } 70% { box-shadow: 0 0 0 6px rgba(52,199,89,0); } 100% { box-shadow: 0 0 0 0 rgba(52,199,89,0); } }
+
+.corridor-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+.corridor-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.risk-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.tag-safe { background: rgba(52,199,89,0.1); color: var(--c-safe); }
+.tag-crit { background: rgba(255,59,48,0.1); color: var(--c-crit); }
+.tag-warn { background: rgba(255,159,10,0.1); color: var(--c-warn); }
+
+/* Mobile Bottom Sheet (kept for search/routes on mobile) */
+.mobile-bottom { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px 20px 0 0; box-shadow: var(--shadow-lg); border-top: 1px solid var(--c-border); padding: 16px; z-index: 400; max-height: 50vh; overflow-y: auto; }
+@media(min-width: 768px) { .mobile-bottom { display: none; } }
+.sheet-handle { width: 40px; height: 4px; background: var(--c-border); border-radius: 2px; margin: 0 auto 16px; }
 
 /* =============================================================
-   MOBILE OVERLAY PANELS
-   Floats above the map on mobile only
+   SCREENS (Overlay specific interactions like Routes, Alerts, Report)
 ============================================================= */
-/* Top search card floats above map */
-.mobile-top{
-  position:absolute;top:12px;left:12px;right:12px;z-index:400;
-}
-@media(min-width:768px){.mobile-top{display:none;}}
+.screen { position: absolute; inset: 0; z-index: 50; background: rgba(245,245,247,0.98); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: none; flex-direction: column; }
+.screen.active { display: flex; }
 
-/* Bottom sheet */
-.mobile-bottom{
-  position:absolute;bottom:0;left:0;right:0;z-index:400;
-  background:var(--c-surface);
-  border-radius:var(--r-lg) var(--r-lg) 0 0;
-  box-shadow:0 -4px 24px rgba(0,0,0,.12);
-  max-height:50vh;
-  overflow-y:auto;
-  transition:transform var(--panel-anim);
-}
-@media(min-width:768px){.mobile-bottom{display:none;}}
+.inner-hdr { background: transparent; padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--c-border); flex-shrink: 0; }
+.inner-hdr-title { font-size: 18px; font-weight: 600; color: var(--c-text); }
+.inner-hdr-sub { font-size: 13px; color: var(--c-text-2); margin-top: 2px; }
+.back-btn { width: 36px; height: 36px; border-radius: 18px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: var(--c-text); transition: background 0.15s; }
+.back-btn:hover { background: rgba(0,0,0,0.1); }
+.scrollable-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 
-/* Mobile FABs */
-.mobile-fabs{
-  position:absolute;right:14px;bottom:calc(50vh + 10px);z-index:410;
-  display:flex;flex-direction:column;gap:10px;
-}
-@media(min-width:768px){.mobile-fabs{display:none;}}
+/* Route Cards */
+.route-card { background: var(--c-surface); border-radius: var(--r-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.route-card.safest { border: 1px solid var(--c-safe); }
+.route-metrics { display: flex; justify-content: space-between; align-items: baseline; }
+.route-time { font-size: 24px; font-weight: 600; color: var(--c-text); }
+.route-dist { font-size: 14px; color: var(--c-text-2); }
+.risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--c-bg); border-radius: 10px; padding: 12px; }
+.rf-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--c-text-2); margin-bottom: 4px; }
+.rf-val { font-size: 14px; font-weight: 600; }
+.prog-bg { height: 4px; background: var(--c-border); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.prog-fill { height: 100%; border-radius: 2px; }
+.fill-safe { background: var(--c-safe); } .fill-warn { background: var(--c-warn); } .fill-crit { background: var(--c-crit); }
 
-/* Mobile SOS */
-.mob-sos{
-  position:absolute;right:14px;bottom:calc(50vh - 80px);z-index:420;
-}
-@media(min-width:768px){.mob-sos{display:none;}}
+/* Alerts */
+.alert-card { background: var(--c-surface); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border-left: 4px solid; display: flex; gap: 12px; align-items: flex-start; }
+.alert-card.crit { border-color: var(--c-crit); } .alert-card.warn { border-color: var(--c-warn); } .alert-card.safe { border-color: var(--c-safe); }
+.alert-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.alert-desc { font-size: 13px; color: var(--c-text-2); line-height: 1.4; margin-bottom: 6px; }
 
-/* =============================================================
-   SCREEN SYSTEM (for full-screen overlays on mobile)
-============================================================= */
-.screen{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:var(--c-bg);}
-.screen.active{display:flex;}
-@media(min-width:768px){
-  /* On desktop screens mount inside sidebar */
-  .screen{position:absolute;inset:0;z-index:30;}
-}
+/* Report Hazard */
+.hazard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.hz-btn { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+.hz-btn.sel { border-color: var(--c-primary); background: var(--c-primary-lt); color: var(--c-primary); }
 
-/* =============================================================
-   SHARED COMPONENT LIBRARY
-============================================================= */
+/* Navigation Overlays */
+#screen-nav { position: fixed !important; inset: 0 !important; z-index: 200 !important; background: transparent; }
+.nav-map-wrap { flex: 1; position: relative; }
+#nav-map { position: absolute; inset: 0; }
+.nav-top-overlay { position: absolute; top: 16px; left: 16px; right: 16px; z-index: 10; }
+.nav-card { background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); color: #fff; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow-lg); }
+.nav-arrow-box { width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.nav-bottom-overlay { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-radius: 20px 20px 0 0; padding: 20px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 16px; }
+.nav-stats { display: flex; justify-content: space-around; }
+.ns-val { font-size: 20px; font-weight: 600; text-align: center; }
+.ns-lbl { font-size: 11px; color: var(--c-text-2); text-transform: uppercase; margin-top: 4px; text-align: center; }
 
-/* --- BRAND HEADER --- */
-.brand-hdr{
-  background:var(--c-surface);
-  padding:14px 16px 12px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid var(--c-border);
-  flex-shrink:0;
-}
-.brand{display:flex;align-items:center;gap:9px;}
-.brand-logo{
-  width:34px;height:34px;
-  background:var(--c-primary);border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-}
-.brand-name{font-size:16px;font-weight:800;color:var(--c-primary);letter-spacing:-.3px;}
-.brand-sub{font-size:11px;color:var(--c-text-2);font-weight:600;margin-top:1px;}
+/* Danger Popup */
+.danger-popup { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border: 1px solid var(--c-crit); border-radius: 16px; padding: 16px; box-shadow: 0 12px 40px rgba(255,59,48,0.2); display: none; flex-direction: column; gap: 12px; position: absolute; top: 100px; left: 16px; right: 16px; z-index: 15; }
+.danger-popup.show { display: flex; }
 
-/* --- ICON BUTTON --- */
-.icon-btn{
-  width:40px;height:40px;border-radius:50%;border:none;background:none;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--c-text-2);cursor:pointer;transition:background .15s;
-  flex-shrink:0;
-}
-.icon-btn:hover,.icon-btn:active{background:var(--c-bg);}
-.icon-btn.primary{color:var(--c-primary);}
-.icon-btn.danger{color:var(--c-crit);}
+/* Modal & Toast */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-bg.open { display: flex; }
+.modal-sheet { background: var(--c-surface); border-radius: 20px; padding: 24px; width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 16px; }
+.sos-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sos-action { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 12px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.sos-action.call { background: rgba(255,59,48,0.1); border-color: rgba(255,59,48,0.2); color: var(--c-crit); }
 
-/* --- FAB --- */
-.fab{
-  width:48px;height:48px;border-radius:50%;
-  background:var(--c-surface);box-shadow:var(--sh-md);
-  border:none;display:flex;align-items:center;justify-content:center;
-  color:var(--c-text);cursor:pointer;transition:transform .15s,background .15s;
-}
-.fab:active{transform:scale(.92);background:var(--c-bg);}
-.fab.has-badge{position:relative;}
-.fab.has-badge::after{
-  content:'';position:absolute;top:8px;right:8px;
-  width:9px;height:9px;border-radius:50%;
-  background:var(--c-crit);border:2px solid #fff;
-}
+.toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); color: #fff; border-radius: 20px; padding: 10px 20px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); z-index: 9999; pointer-events: none; opacity: 0; transition: all 0.3s ease; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* --- SOS BUTTON --- */
-.sos-btn{
-  display:flex;align-items:center;gap:8px;
-  background:var(--c-crit);color:#fff;
-  border:none;border-radius:28px;
-  padding:11px 18px;
-  font-size:13.5px;font-weight:800;
-  box-shadow:0 4px 18px rgba(217,48,37,.40);
-  cursor:pointer;transition:transform .15s,box-shadow .15s;
-}
-.sos-btn:active{transform:scale(.94);box-shadow:none;}
-
-/* --- BACK BUTTON --- */
-.back-btn{
-  width:40px;height:40px;border-radius:50%;
-  background:var(--c-bg);border:none;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--c-text);cursor:pointer;
-  flex-shrink:0;
-}
-.back-btn:active{background:var(--c-border);}
-
-/* --- SEARCH CARD --- */
-.search-card{
-  background:var(--c-surface);border-radius:var(--r-md);
-  box-shadow:var(--sh-md);padding:10px 12px;
-  display:flex;flex-direction:column;gap:8px;
-}
-.search-field{
-  display:flex;align-items:center;gap:10px;
-  background:var(--c-bg);border:1.5px solid var(--c-border);
-  border-radius:12px;padding:10px 10px;
-  transition:border-color .2s,box-shadow .2s;
-}
-.search-field:focus-within{border-color:var(--c-primary);box-shadow:0 0 0 2px rgba(26,115,232,.15);}
-.search-field input{
-  flex:1;border:none;background:transparent;
-  font-size:14px;font-weight:600;color:var(--c-text);min-width:0;
-}
-.search-field input::placeholder{color:var(--c-text-3);font-weight:500;}
-
-/* Dot markers */
-.dot-origin{width:12px;height:12px;border-radius:50%;background:var(--c-primary);box-shadow:0 0 0 3px rgba(26,115,232,.20);flex-shrink:0;}
-.dot-dest{width:12px;height:12px;border-radius:3px;background:var(--c-crit);box-shadow:0 0 0 3px rgba(217,48,37,.20);flex-shrink:0;}
-
-/* GPS button */
-.btn-gps{
-  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
-  background:var(--c-primary-lt);border:1.5px solid #c2e7ff;
-  color:var(--c-primary-dk);border-radius:12px;
-  padding:11px 14px;font-size:13.5px;font-weight:700;
-  cursor:pointer;transition:background .15s;
-}
-.btn-gps:active{background:#d3e3fd;}
-
-/* Quick chips */
-.chips-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
-.chips-row::-webkit-scrollbar{display:none;}
-.chip{
-  flex-shrink:0;white-space:nowrap;
-  background:var(--c-surface);border:1px solid var(--c-border);
-  border-radius:18px;padding:6px 12px;
-  font-size:12.5px;font-weight:600;color:var(--c-text);
-  display:flex;align-items:center;gap:5px;
-  box-shadow:0 1px 3px rgba(0,0,0,.05);cursor:pointer;
-}
-.chip:active{background:var(--c-bg);}
-
-/* Main CTA */
-.btn-primary{
-  width:100%;padding:14px;
-  background:var(--c-primary);color:#fff;
-  border:none;border-radius:14px;
-  font-size:15px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:0 3px 12px rgba(26,115,232,.35);cursor:pointer;
-}
-.btn-primary:active{background:var(--c-primary-dk);transform:scale(.98);}
-.btn-danger{background:var(--c-crit);box-shadow:0 3px 12px rgba(217,48,37,.35);}
-.btn-danger:active{background:#b71c1c;}
-.btn-safe{background:var(--c-safe);box-shadow:0 3px 12px rgba(30,142,62,.30);}
-.btn-safe:active{background:#155e2c;}
-
-/* --- PANEL HANDLE --- */
-.sheet-handle{width:40px;height:4px;background:var(--c-border);border-radius:2px;margin:10px auto 14px;}
-
-/* --- SECTION LABEL --- */
-.sec-lbl{font-size:11.5px;font-weight:800;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
-
-/* --- LIVE BADGE --- */
-.live-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:700;color:var(--c-safe);
-}
-.live-dot{
-  width:8px;height:8px;border-radius:50%;background:var(--c-safe);
-  animation:livepulse 1.6s infinite;
-}
-@keyframes livepulse{
-  0%{box-shadow:0 0 0 0 rgba(30,142,62,.6);}
-  70%{box-shadow:0 0 0 7px rgba(30,142,62,0);}
-  100%{box-shadow:0 0 0 0 rgba(30,142,62,0);}
-}
-
-/* --- RISK COLOR SYSTEM --- */
-.risk-safe{color:var(--c-safe);}
-.risk-warn{color:var(--c-warn);}
-.risk-high{color:var(--c-high);}
-.risk-crit{color:var(--c-crit);}
-
-.tag-safe{background:var(--c-safe-bg);color:var(--c-safe);border:1px solid var(--c-safe-border);}
-.tag-warn{background:var(--c-warn-bg);color:var(--c-warn);}
-.tag-high{background:var(--c-high-bg);color:var(--c-high);}
-.tag-crit{background:var(--c-crit-bg);color:var(--c-crit);border:1px solid var(--c-crit-border);}
-
-.risk-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;}
-
-/* Progress bar */
-.prog-bg{width:100%;height:5px;background:#e8eaed;border-radius:3px;overflow:hidden;margin-top:4px;}
-.prog-fill{height:100%;border-radius:3px;}
-.fill-safe{background:var(--c-safe);}
-.fill-warn{background:var(--c-warn);}
-.fill-high{background:var(--c-high);}
-.fill-crit{background:var(--c-crit);}
-
-/* --- CORRIDOR STATUS CARDS --- */
-.corridor-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
-.corridor-scroll::-webkit-scrollbar{display:none;}
-.corridor-card{
-  flex:0 0 170px;background:var(--c-surface);
-  border:1px solid var(--c-border);border-radius:13px;
-  padding:10px 12px;display:flex;flex-direction:column;gap:5px;
-}
-.corridor-name{font-size:12px;font-weight:700;color:var(--c-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* --- WEATHER STRIP --- */
-.wx-strip{
-  background:#f0f7fd;border:1px solid #c2e7ff;border-radius:13px;
-  padding:11px 13px;display:flex;align-items:center;justify-content:space-between;gap:10px;
-  margin-top:8px;
-}
-.wx-left{display:flex;align-items:center;gap:10px;}
-.wx-temp{font-size:18px;font-weight:800;color:#174ea6;}
-.wx-desc{font-size:12px;font-weight:600;color:#3c4043;}
-.wx-badge{
-  background:#fff;border:1px solid #bad2f9;border-radius:16px;
-  padding:4px 10px;font-size:11.5px;font-weight:700;color:#1967d2;
-  display:flex;align-items:center;gap:5px;flex-shrink:0;
-}
-
-/* --- ROUTE CARDS --- */
-.route-card{
-  background:var(--c-surface);border-radius:var(--r-md);
-  border:2px solid var(--c-border);
-  box-shadow:var(--sh-sm);padding:16px;
-  display:flex;flex-direction:column;gap:12px;
-}
-.route-card.safest{border-color:var(--c-safe);}
-.route-card.high-risk{border-color:var(--c-crit);}
-
-.route-badge-row{display:flex;align-items:center;justify-content:space-between;}
-.route-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 11px;border-radius:20px;
-  font-size:11.5px;font-weight:800;letter-spacing:.2px;
-}
-.badge-safest{background:#ceead6;color:#0d652d;}
-.badge-fastest{background:#fad2cf;color:#a50e0e;}
-.badge-alt{background:var(--c-bg);color:var(--c-text-2);}
-
-.route-via{font-size:12px;color:var(--c-text-2);font-weight:600;}
-
-.route-metrics{display:flex;align-items:baseline;justify-content:space-between;}
-.route-time{font-size:22px;font-weight:800;color:var(--c-text);}
-.route-dist{font-size:14px;color:var(--c-text-2);font-weight:600;}
-
-/* 4-factor risk grid */
-.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--c-bg);border-radius:12px;padding:10px;}
-.risk-factor{display:flex;flex-direction:column;gap:3px;}
-.rf-label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-text-2);font-weight:600;}
-.rf-val{font-size:13px;font-weight:800;}
-
-.route-insight{border-radius:11px;padding:10px 13px;font-size:13px;font-weight:600;line-height:1.45;}
-
-.road-cond{font-size:12px;color:var(--c-text-2);font-weight:600;display:flex;align-items:center;gap:5px;}
-
-/* --- AI RECOMMENDATION BOX --- */
-.ai-box{
-  background:linear-gradient(135deg,#e6f4ea,#f0fbf4);
-  border:1.5px solid var(--c-safe-border);border-radius:14px;
-  padding:13px 14px;display:flex;gap:10px;align-items:flex-start;
-}
-.ai-box-text{font-size:12.5px;color:#137333;line-height:1.4;font-weight:600;}
-.ai-box-text strong{color:#0d5a23;}
-
-/* --- NAV INSTRUCTION CARD --- */
-.nav-card{
-  background:var(--c-primary);color:#fff;
-  border-radius:var(--r-md);padding:14px 16px;
-  box-shadow:var(--sh-lg);
-  display:flex;align-items:center;gap:14px;
-}
-.nav-arrow-box{
-  width:46px;height:46px;border-radius:13px;
-  background:rgba(255,255,255,.18);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.nav-turn-dist{font-size:20px;font-weight:800;line-height:1.1;}
-.nav-turn-road{font-size:13px;opacity:.9;margin-top:3px;font-weight:600;}
-
-/* --- DANGER POPUP --- */
-.danger-popup{
-  background:var(--c-surface);border:2px solid var(--c-crit);
-  border-radius:var(--r-md);padding:16px;
-  box-shadow:0 8px 28px rgba(217,48,37,.28);
-  display:none;flex-direction:column;gap:10px;
-  animation:slideDown .25s ease;
-}
-.danger-popup.show{display:flex;}
-@keyframes slideDown{from{transform:translateY(-12px);opacity:0}to{transform:translateY(0);opacity:1}}
-.danger-head{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:var(--c-crit);}
-.danger-msg{font-size:13px;color:#3c4043;line-height:1.45;font-weight:600;}
-.btn-dismiss{background:none;color:var(--c-text-2);font-size:12.5px;font-weight:700;padding:6px;cursor:pointer;}
-
-/* --- NAV STATS BAR --- */
-.nav-stats{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  background:var(--c-bg);border-radius:13px;overflow:hidden;
-}
-.nav-stat{padding:13px 8px;text-align:center;border-right:1px solid var(--c-border);}
-.nav-stat:last-child{border-right:none;}
-.ns-val{font-size:18px;font-weight:800;color:var(--c-text);}
-.ns-lbl{font-size:10.5px;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;font-weight:700;}
-
-/* --- HAZARD GRID --- */
-.hazard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-@media(min-width:480px){.hazard-grid{grid-template-columns:repeat(3,1fr);}}
-@media(min-width:768px){.hazard-grid{grid-template-columns:repeat(2,1fr);}}
-@media(min-width:900px){.hazard-grid{grid-template-columns:repeat(3,1fr);}}
-.hz-btn{
-  background:var(--c-surface);border:2px solid var(--c-border);
-  border-radius:14px;padding:18px 12px;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  font-size:13px;font-weight:700;color:var(--c-text);
-  cursor:pointer;transition:all .15s;
-}
-.hz-btn:active,.hz-btn.sel{border-color:var(--c-crit);background:#fdf2f2;color:var(--c-crit);}
-
-/* --- ALERTS LIST --- */
-.alerts-scroll{flex:1;overflow-y:auto;padding:12px;}
-.alert-card{
-  background:var(--c-surface);border-radius:14px;
-  border-left:4px solid;padding:13px 14px;
-  margin-bottom:10px;box-shadow:var(--sh-sm);
-  display:flex;gap:12px;align-items:flex-start;
-}
-.alert-card.crit{border-color:var(--c-crit);}
-.alert-card.warn{border-color:#fbbc04;}
-.alert-card.info{border-color:var(--c-primary);}
-.alert-card.safe{border-color:var(--c-safe);}
-.alert-icon{flex-shrink:0;margin-top:2px;}
-.alert-title{font-size:13.5px;font-weight:800;margin-bottom:3px;}
-.alert-desc{font-size:12.5px;color:var(--c-text-2);line-height:1.4;margin-bottom:4px;}
-.alert-time{font-size:11px;color:var(--c-text-3);font-weight:600;}
-
-/* --- SOS MODAL --- */
-.modal-bg{
-  position:fixed;inset:0;background:rgba(0,0,0,.55);
-  z-index:900;display:none;align-items:flex-end;
-}
-.modal-bg.open{display:flex;}
-@media(min-width:768px){.modal-bg{align-items:center;justify-content:center;}}
-.modal-sheet{
-  background:var(--c-surface);border-radius:var(--r-lg) var(--r-lg) 0 0;
-  padding:22px 18px 36px;width:100%;
-  display:flex;flex-direction:column;gap:14px;
-  animation:slideUp .22s ease;
-}
-@media(min-width:768px){
-  .modal-sheet{
-    border-radius:var(--r-lg);
-    max-width:460px;max-height:90vh;
-    overflow-y:auto;
-  }
-}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:9px;color:var(--c-crit);}
-.modal-sub{font-size:13px;color:var(--c-text-2);}
-.sos-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.sos-action{
-  background:var(--c-bg);border:1.5px solid var(--c-border);
-  border-radius:14px;padding:16px 12px;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  font-size:13px;font-weight:700;color:var(--c-text);cursor:pointer;
-}
-.sos-action.call{background:var(--c-crit-bg);border-color:var(--c-crit-border);color:var(--c-crit);}
-.sos-action:active{opacity:.7;}
-
-/* --- GPS CONFIRM BOX --- */
-.gps-box{
-  background:var(--c-primary-lt);border:1px solid #c2e7ff;
-  border-radius:12px;padding:12px;
-  display:flex;align-items:center;gap:10px;
-}
-.gps-box-text{font-size:13px;color:var(--c-primary-dk);font-weight:600;}
-
-/* --- NOTE TEXTAREA --- */
-.note-area{
-  width:100%;border:1.5px solid var(--c-border);border-radius:12px;
-  padding:12px;font-size:14px;resize:none;min-height:80px;
-  background:var(--c-surface);color:var(--c-text);
-}
-.note-area:focus{border-color:var(--c-primary);}
-
-/* --- TOAST --- */
-.toast{
-  position:fixed;bottom:28px;left:50%;
-  transform:translateX(-50%) translateY(20px);
-  background:#3c4043;color:#fff;
-  border-radius:28px;padding:10px 22px;
-  font-size:13.5px;font-weight:600;
-  box-shadow:var(--sh-lg);z-index:9999;
-  pointer-events:none;opacity:0;transition:all .25s ease;
-  white-space:nowrap;
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-@media(max-width:420px){.toast{max-width:90vw;white-space:normal;text-align:center;}}
-
-/* =============================================================
-   SIDEBAR CONTENT AREA
-============================================================= */
-.sidebar-body{
-  flex:1;overflow-y:auto;
-  display:flex;flex-direction:column;gap:14px;
-  padding:14px;
-}
-
-/* =============================================================
-   NAV SCREEN OVERLAY (both mobile and desktop)
-============================================================= */
-#screen-nav{
-  position:fixed!important;inset:0!important;
-  z-index:200!important;
-}
-.nav-map-wrap{flex:1;position:relative;}
-#nav-map{position:absolute;inset:0;}
-
-.nav-top-overlay{position:absolute;top:12px;left:12px;right:12px;z-index:10;}
-.nav-danger-overlay{position:absolute;top:100px;left:12px;right:12px;z-index:11;}
-.rz-pill{
-  position:absolute;bottom:220px;left:12px;z-index:11;
-  background:var(--c-crit);color:#fff;
-  border-radius:12px;padding:8px 14px;
-  font-size:13px;font-weight:700;display:none;
-  box-shadow:0 3px 10px rgba(217,48,37,.4);
-}
-.rz-pill.show{display:flex;align-items:center;gap:6px;}
-.nav-bottom-overlay{
-  position:absolute;bottom:0;left:0;right:0;z-index:10;
-  background:var(--c-surface);border-radius:var(--r-lg) var(--r-lg) 0 0;
-  box-shadow:0 -4px 20px rgba(0,0,0,.12);
-  padding:16px 16px 28px;
-  display:flex;flex-direction:column;gap:12px;
-}
-.nav-btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;}
-.btn-end{
-  padding:13px;background:var(--c-bg);
-  border:none;border-radius:12px;
-  font-size:14px;font-weight:700;color:var(--c-text);cursor:pointer;
-}
-
-/* Nav SOS float */
-.nav-sos-fab{
-  position:absolute;right:14px;bottom:185px;z-index:12;
-}
-
-/* =============================================================
-   HEADER ROW FOR INNER SCREENS
-============================================================= */
-.inner-hdr{
-  background:var(--c-surface);padding:13px 16px;
-  display:flex;align-items:center;gap:12px;
-  border-bottom:1px solid var(--c-border);flex-shrink:0;
-}
-.inner-hdr-title{font-size:17px;font-weight:800;color:var(--c-text);}
-.inner-hdr-sub{font-size:12px;color:var(--c-text-2);margin-top:1px;}
-
-/* =============================================================
-   RESPONSIVE SCROLLABLE ROUTE/ALERT BODY
-============================================================= */
-.scrollable-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;}
-
-/* =============================================================
-   LANGUAGE TOGGLE CHIP
-============================================================= */
-.lang-chip{
-  display:flex;align-items:center;gap:5px;
-  background:var(--c-primary-lt);border:1px solid #d2e3fc;
-  color:var(--c-primary-dk);border-radius:20px;padding:5px 11px;
-  font-size:12px;font-weight:700;cursor:pointer;
-}
-.lang-chip:active{background:#d3e3fd;}
-
-/* =============================================================
-   ADMIN PORTAL STYLES
-============================================================= */
-.admin-tab{padding:8px 14px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:20px;font-size:12.5px;font-weight:700;color:var(--c-text-2);cursor:pointer;white-space:nowrap;transition:all .2s ease;}
-.admin-tab.active{background:var(--c-primary);border-color:var(--c-primary);color:#fff;}
-.admin-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh-sm);transition:box-shadow .2s ease;}
-.admin-card.pending{border-left:5px solid var(--c-warn);}
-.admin-card.verified{border-left:5px solid var(--c-safe);}
-.admin-card.rejected{border-left:5px solid var(--c-text-3);opacity:.85;}
-.btn-approve{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--c-safe);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;flex:1;}
-.btn-approve:active{background:#137333;}
-.btn-reject{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--c-bg);color:var(--c-crit);border:1px solid var(--c-crit-border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
-.btn-reject:active{background:var(--c-crit-bg);}
-.badge-pending{background:var(--c-warn-bg);color:var(--c-warn);border:1px solid #ffe082;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
-.badge-verified{background:var(--c-safe-bg);color:var(--c-safe);border:1px solid var(--c-safe-border);padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
-.badge-rejected{background:var(--c-bg);color:var(--c-text-2);border:1px solid var(--c-border);padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
+/* Reset risk colors */
+.risk-safe{color:var(--c-safe);}.risk-warn{color:var(--c-warn);}.risk-high{color:var(--c-warn);}.risk-crit{color:var(--c-crit);}
 </style>
 </head>
 <body>
 
-<!-- ===================== APP SHELL ===================== -->
+<!-- SHELL -->
 <div id="shell">
+  <!-- APPLE TOP NAV -->
+  <header class="apple-nav">
+    <div class="nav-left">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--c-primary)"><path d="M12 2L3 7v5c0 5.25 3.84 10.14 9 11.34C17.16 22.14 21 17.25 21 12V7L12 2z"/></svg>
+      <span class="brand-name">NER SafeRoute</span>
+    </div>
+    
+    <div class="nav-center">
+      <button class="nav-btn" onclick="switchScreen('alerts')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="lbl">Alerts</span>
+      </button>
+      <button class="nav-btn" onclick="switchScreen('report')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="lbl">Report</span>
+      </button>
+      <button class="nav-btn sos-nav" onclick="openSOS()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="lbl">SOS</span>
+      </button>
+    </div>
+    
+    <div class="nav-right">
+      <div class="wx-widget" onclick="toggleWeather(event)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 19v3M12 19v3M16 19v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="wx-txt">24°C</span>
+      </div>
+      <button class="lang-btn" onclick="toggleLang()" id="desk-lang-lbl">EN</button>
+    </div>
+  </header>
 
-  <!-- ---- MAP AREA (always behind on mobile, right column on desktop) ---- -->
-  <div id="map-area">
-    <div id="the-map"></div>
+  <!-- WEATHER POPOVER -->
+  <div id="wx-popover" class="wx-popover">
+     <div class="wx-pop-title">Regional Weather</div>
+     <div class="wx-pop-row"><span>Temperature</span><span style="font-weight:500;color:var(--c-text)">24°C</span></div>
+     <div class="wx-pop-row"><span>Condition</span><span style="font-weight:500;color:var(--c-text)">Heavy Rain</span></div>
+     <div class="wx-pop-row"><span>Rainfall Rate</span><span style="font-weight:600;color:var(--c-primary)">72 mm/h</span></div>
+     <div class="wx-pop-row" style="border-bottom:none"><span>Flood Risk</span><span style="font-weight:600;color:var(--c-crit)">High (45%)</span></div>
+  </div>
 
-    <!-- Mobile-only: floating search panel -->
-    <div class="mobile-top">
-      <div class="search-card">
-        <!-- brand row -->
-        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--c-border);padding-bottom:9px;">
-          <div class="brand">
-            <div class="brand-logo">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v5c0 5.25 3.84 10.14 9 11.34C17.16 22.14 21 17.25 21 12V7L12 2z" fill="#fff"/></svg>
-            </div>
-            <div><div class="brand-name">NER SafeRoute</div></div>
-          </div>
-          <button class="lang-chip" onclick="toggleLang()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" stroke="currentColor" stroke-width="2"/></svg>
-            <span id="mob-lang-lbl">EN</span>
-          </button>
-        </div>
-        <!-- origin field -->
+  <!-- MAIN AREA -->
+  <div class="main-content">
+    
+    <!-- DESKTOP SIDEBAR -->
+    <aside id="sidebar">
+      <div class="card" style="margin-bottom:20px;">
+        <div class="sec-title">Plan Route</div>
         <div class="search-field">
-          <div class="dot-origin"></div>
-          <input id="mob-origin" type="text" placeholder="Your location" value="Guwahati, Assam"/>
-          <button class="icon-btn primary" onclick="useGPS()" style="width:32px;height:32px;">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/></svg>
-          </button>
-          <button class="icon-btn" onclick="startVoice('origin')" style="width:32px;height:32px;">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0014 0M12 18v4m-3 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
+          <div class="dot-origin"></div><input id="desk-origin" type="text" placeholder="Your location" value="Guwahati, Assam"/>
         </div>
-        <!-- dest field -->
         <div class="search-field">
-          <div class="dot-dest"></div>
-          <input id="mob-dest" type="text" placeholder="Where do you want to go?" onkeydown="if(event.key==='Enter')findRoutes()"/>
-          <button class="icon-btn" onclick="startVoice('dest')" style="width:32px;height:32px;">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0014 0M12 18v4m-3 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
+          <div class="dot-dest"></div><input id="desk-dest" type="text" placeholder="Where to?" onkeydown="if(event.key==='Enter')findRoutes()"/>
         </div>
-        <button class="btn-gps" onclick="useGPS()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/></svg>
-          <span id="mob-gps-lbl">Use My Current Location</span>
-        </button>
-        <!-- quick chips -->
         <div class="chips-row">
-          <button class="chip" onclick="quickDest('Shillong')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>
-            Shillong
-          </button>
-          <button class="chip" onclick="quickDest('Silchar')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>
-            Silchar
-          </button>
-          <button class="chip" onclick="quickDest('Jorhat')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>
-            Jorhat
-          </button>
-          <button class="chip" onclick="quickDest('Tawang')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>
-            Tawang
-          </button>
-          <button class="chip" onclick="quickDest('Itanagar')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>
-            Itanagar
-          </button>
+          <button class="chip" onclick="quickDest('Shillong')">Shillong</button>
+          <button class="chip" onclick="quickDest('Silchar')">Silchar</button>
+          <button class="chip" onclick="quickDest('Tawang')">Tawang</button>
+          <button class="chip" onclick="quickDest('Itanagar')">Itanagar</button>
         </div>
-      </div>
-    </div>
-
-    <!-- Mobile FABs -->
-    <div class="mobile-fabs">
-      <button class="fab" onclick="switchScreen('admin')" title="Admin Verification Portal" style="position:relative;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span id="mob-admin-count" style="position:absolute;top:-4px;right:-4px;background:var(--c-crit);color:#fff;font-size:10px;font-weight:800;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;border:2px solid #fff;">0</span>
-      </button>
-      <button class="fab has-badge" onclick="switchScreen('alerts')" title="Alerts">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <button class="fab" onclick="recenterMap()" title="Recenter">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/></svg>
-      </button>
-      <button class="fab" onclick="switchScreen('report')" title="Report hazard">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-
-    <!-- Mobile SOS -->
-    <div class="mob-sos">
-      <button class="sos-btn" onclick="openSOS()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        SOS
-      </button>
-    </div>
-
-    <!-- Mobile Bottom Sheet -->
-    <div class="mobile-bottom" id="mob-sheet">
-      <div class="sheet-handle"></div>
-      <div style="padding:0 16px 4px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div class="live-badge">
-            <span class="live-dot"></span>
-            <span id="mob-corridor-lbl">NER Corridors — Live Risk</span>
-          </div>
-          <span style="font-size:11px;color:var(--c-text-3);font-weight:700;">Upd. 2m ago</span>
-        </div>
-        <!-- Alert banner -->
-        <div style="background:var(--c-crit-bg);border:1px solid var(--c-crit-border);border-radius:11px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:1px;color:var(--c-crit)"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span style="font-size:12.5px;font-weight:700;color:var(--c-crit);">NH6 Nongpoh–Umiam BLOCKED — Landslide active. Risk: 98%</span>
-        </div>
-        <!-- Corridor cards -->
-        <div class="corridor-scroll" style="margin-bottom:10px;">
-          <div class="corridor-card"><div class="corridor-name">NH-6 Guwahati–Nongpoh</div><span class="risk-tag tag-safe"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>SAFE 18%</span></div>
-          <div class="corridor-card"><div class="corridor-name">NH-6 Nongpoh–Umiam</div><span class="risk-tag tag-crit"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>BLOCKED 98%</span></div>
-          <div class="corridor-card"><div class="corridor-name">NH-37 Guwahati–Jorhat</div><span class="risk-tag tag-safe"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>SAFE 12%</span></div>
-          <div class="corridor-card"><div class="corridor-name">NH-13 Sela Pass–Tawang</div><span class="risk-tag tag-warn"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>CAUTION 55%</span></div>
-        </div>
-        <!-- Weather -->
-        <div class="wx-strip">
-          <div class="wx-left">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" stroke="#174ea6" stroke-width="2" stroke-linecap="round"/><path d="M8 19v3M12 19v3M16 19v3" stroke="#174ea6" stroke-width="2" stroke-linecap="round"/></svg>
-            <div><div class="wx-temp" id="mob-wx-temp">--°C · Rain</div><div class="wx-desc" id="mob-wx-desc">Loading weather — Kamrup Metro</div></div>
-          </div>
-          <div class="wx-badge" id="mob-wx-badge">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M5 5l7-3 7 3M5 19l7 3 7-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <span id="mob-wx-rain">-- mm</span>
-          </div>
-        </div>
-        <button class="btn-primary" style="margin-top:10px;margin-bottom:4px;" onclick="findRoutes()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z" fill="currentColor"/></svg>
-          <span id="mob-find-lbl">CHECK SAFE ROUTES</span>
-        </button>
-      </div>
-    </div>
-  </div><!-- /map-area -->
-
-  <!-- ---- SIDEBAR (tablet/desktop only) ---- -->
-  <div id="sidebar">
-    <div class="brand-hdr">
-      <div class="brand">
-        <div class="brand-logo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v5c0 5.25 3.84 10.14 9 11.34C17.16 22.14 21 17.25 21 12V7L12 2z" fill="#fff"/></svg>
-        </div>
-        <div>
-          <div class="brand-name">NER SafeRoute</div>
-          <div class="brand-sub">AI Risk Navigation · North East India</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button class="lang-chip" onclick="toggleLang()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" stroke="currentColor" stroke-width="2"/></svg>
-          <span id="desk-lang-lbl">EN / हिंदी / অসমীয়া</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Sidebar Home Content -->
-    <div class="sidebar-body" id="sidebar-home">
-      <!-- Search -->
-      <div class="search-card">
-        <div class="search-field">
-          <div class="dot-origin"></div>
-          <input id="desk-origin" type="text" placeholder="Your location" value="Guwahati, Assam"/>
-          <button class="icon-btn primary" onclick="useGPS()" style="width:32px;height:32px;" title="Use GPS">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/></svg>
-          </button>
-          <button class="icon-btn" onclick="startVoice('origin')" style="width:32px;height:32px;" title="Voice input">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0014 0M12 18v4m-3 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-        <div class="search-field">
-          <div class="dot-dest"></div>
-          <input id="desk-dest" type="text" placeholder="Where do you want to go?" onkeydown="if(event.key==='Enter')findRoutes()"/>
-          <button class="icon-btn" onclick="startVoice('dest')" style="width:32px;height:32px;" title="Voice input">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0014 0M12 18v4m-3 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-        <button class="btn-gps" onclick="useGPS()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/></svg>
-          <span id="desk-gps-lbl">Use My Current Location</span>
-        </button>
-        <div class="chips-row">
-          <button class="chip" onclick="quickDest('Shillong')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>Shillong</button>
-          <button class="chip" onclick="quickDest('Silchar')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>Silchar</button>
-          <button class="chip" onclick="quickDest('Jorhat')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>Jorhat</button>
-          <button class="chip" onclick="quickDest('Tawang')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>Tawang</button>
-          <button class="chip" onclick="quickDest('Itanagar')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>Itanagar</button>
-          <button class="chip" onclick="quickDest('Dimapur')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>Dimapur</button>
-        </div>
-        <button class="btn-primary" onclick="findRoutes()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z" fill="currentColor"/></svg>
-          <span id="desk-find-lbl">CHECK SAFE ROUTES</span>
-        </button>
+        <button class="btn-primary" onclick="findRoutes()">Check Safe Routes</button>
       </div>
 
-      <!-- Corridor status -->
       <div>
-        <div class="live-badge" style="margin-bottom:8px;"><span class="live-dot"></span><span id="desk-corridor-lbl">NER Corridors — Live Risk</span></div>
-        <div class="corridor-scroll">
-          <div class="corridor-card"><div class="corridor-name">NH-6 Guwahati–Nongpoh</div><span class="risk-tag tag-safe" style="margin-top:2px;"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>SAFE 18%</span></div>
-          <div class="corridor-card"><div class="corridor-name">NH-6 Nongpoh–Umiam</div><span class="risk-tag tag-crit" style="margin-top:2px;"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>BLOCKED 98%</span></div>
-          <div class="corridor-card"><div class="corridor-name">NH-37 Guwahati–Jorhat</div><span class="risk-tag tag-safe" style="margin-top:2px;"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>SAFE 12%</span></div>
-          <div class="corridor-card"><div class="corridor-name">NH-13 Sela Pass–Tawang</div><span class="risk-tag tag-warn" style="margin-top:2px;"><svg width="8" height="8" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>CAUTION 55%</span></div>
+        <div class="live-badge" style="margin-bottom:12px;"><span class="live-dot"></span><span id="desk-corridor-lbl">Live Corridors</span></div>
+        <div class="corridor-card"><div class="corridor-name">NH-6 Guwahati–Nongpoh</div><span class="risk-tag tag-safe">Safe 18%</span></div>
+        <div class="corridor-card"><div class="corridor-name">NH-6 Nongpoh–Umiam</div><span class="risk-tag tag-crit">Blocked 98%</span></div>
+        <div class="corridor-card"><div class="corridor-name">NH-37 Guwahati–Jorhat</div><span class="risk-tag tag-safe">Safe 12%</span></div>
+        <div class="corridor-card"><div class="corridor-name">NH-13 Sela Pass–Tawang</div><span class="risk-tag tag-warn">Caution 55%</span></div>
+      </div>
+    </aside>
+
+    <!-- MAP & OVERLAYS -->
+    <main id="map-area">
+      <div id="the-map"></div>
+
+      <!-- Mobile Bottom Sheet (combines search and corridors for mobile) -->
+      <div class="mobile-bottom" id="mob-sheet">
+        <div class="sheet-handle"></div>
+        <div class="search-field"><div class="dot-dest"></div><input id="mob-dest" type="text" placeholder="Where do you want to go?" onkeydown="if(event.key==='Enter')findRoutes()"/></div>
+        <button class="btn-primary" style="margin-bottom:16px;" onclick="findRoutes()">Check Safe Routes</button>
+        
+        <div class="live-badge" style="margin-bottom:8px;"><span class="live-dot"></span><span id="mob-corridor-lbl">Live Corridors</span></div>
+        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none;">
+          <div class="corridor-card" style="flex: 0 0 160px; margin-bottom:0;"><div class="corridor-name">NH-6 Nongpoh</div><span class="risk-tag tag-crit">Blocked 98%</span></div>
+          <div class="corridor-card" style="flex: 0 0 160px; margin-bottom:0;"><div class="corridor-name">NH-37 Jorhat</div><span class="risk-tag tag-safe">Safe 12%</span></div>
         </div>
       </div>
+    </main>
 
-      <!-- Weather -->
-      <div class="wx-strip">
-        <div class="wx-left">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" stroke="#174ea6" stroke-width="2" stroke-linecap="round"/><path d="M8 19v3M12 19v3M16 19v3" stroke="#174ea6" stroke-width="2" stroke-linecap="round"/></svg>
-          <div><div class="wx-temp" id="desk-wx-temp">--°C · Rain Alert</div><div class="wx-desc" id="desk-wx-desc">Loading weather — Ri-Bhoi & Khasi Hills</div></div>
-        </div>
-        <div class="wx-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M5 5l7-3 7 3M5 19l7 3 7-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span id="desk-wx-rain">-- mm</span>
-        </div>
+    <!-- FULL SCREEN OVERLAYS -->
+    <!-- Routes Screen -->
+    <div class="screen" id="screen-routes">
+      <div class="inner-hdr">
+        <button class="back-btn" onclick="switchScreen('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+        <div><div class="inner-hdr-title" id="routes-headline">Select Safe Route</div><div class="inner-hdr-sub">Ranked by AI Risk Engine</div></div>
       </div>
-
-      <!-- Quick actions -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button onclick="switchScreen('alerts')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--c-text);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Live Alerts
-        </button>
-        <button onclick="switchScreen('report')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--c-text);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Report Hazard
-        </button>
-      </div>
-
-      <!-- Admin Portal Button -->
-      <button onclick="switchScreen('admin')" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--c-primary-lt);border:1.5px solid var(--c-primary);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--c-primary-dk);width:100%;">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Admin Verification Portal
-        <span id="desk-admin-count" style="background:var(--c-crit);color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:4px;display:none;">0</span>
-      </button>
-
-      <!-- SOS -->
-      <button class="sos-btn" onclick="openSOS()" style="width:100%;justify-content:center;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Emergency SOS
-      </button>
-    </div><!-- /sidebar-home -->
-  </div><!-- /sidebar -->
-</div><!-- /shell -->
-
-<!-- =============================================================
-     FULL-SCREEN SCREENS (overlay all layouts)
-============================================================= -->
-
-<!-- ---- ROUTES SCREEN ---- -->
-<div class="screen" id="screen-routes">
-  <div class="inner-hdr">
-    <button class="back-btn" onclick="switchScreen('home')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
-    <div>
-      <div class="inner-hdr-title" id="routes-headline">Select Safe Route</div>
-      <div class="inner-hdr-sub">AI Risk Engine — ranked safest first</div>
+      <div class="scrollable-body" id="routes-body"></div>
     </div>
-  </div>
-  <div class="scrollable-body" id="routes-body"></div>
-</div>
 
-<!-- ---- NAVIGATION SCREEN ---- -->
-<div class="screen" id="screen-nav">
-  <div class="nav-map-wrap">
-    <div id="nav-map"></div>
-    <!-- Top instruction -->
-    <div class="nav-top-overlay">
-      <div class="nav-card">
-        <div class="nav-arrow-box">
-          <svg id="nav-arrow-icon" width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+    <!-- Navigation Screen -->
+    <div class="screen" id="screen-nav">
+      <div class="nav-map-wrap">
+        <div id="nav-map"></div>
+        <div class="nav-top-overlay">
+          <div class="nav-card">
+            <div class="nav-arrow-box"><svg id="nav-arrow-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
+            <div><div style="font-size:18px;font-weight:600;" id="nav-dist-txt">3.2 km</div><div style="font-size:13px;opacity:0.8;margin-top:2px;" id="nav-road-txt">Continue on NH-6</div></div>
+          </div>
         </div>
-        <div>
-          <div class="nav-turn-dist" id="nav-dist-txt">3.2 km</div>
-          <div class="nav-turn-road" id="nav-road-txt">Continue on NH-6 towards Jorabat</div>
+        
+        <div class="danger-popup" id="danger-popup">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--c-crit);font-weight:600;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> DANGER AHEAD</div>
+          <div id="danger-msg" style="font-size:13px;line-height:1.4;">Heavy rainfall has increased landslide risk. Alternate available.</div>
+          <button class="btn-primary" style="background:var(--c-safe)" onclick="takeSafer()">Take Safer Route</button>
+          <button style="font-size:13px;color:var(--c-text-2);padding:8px;" onclick="dismissDanger()">Dismiss</button>
+        </div>
+
+        <div class="nav-bottom-overlay">
+          <div class="nav-stats">
+            <div><div class="ns-val" id="ns-eta">--</div><div class="ns-lbl">ETA</div></div>
+            <div><div class="ns-val" id="ns-dist">--</div><div class="ns-lbl">Dist</div></div>
+            <div><div class="ns-val" id="ns-risk">--</div><div class="ns-lbl">Risk</div></div>
+          </div>
+          <div style="display:flex;gap:12px;">
+            <button class="btn-primary" style="background:var(--c-border);color:var(--c-text);" onclick="endNav()">End</button>
+            <button class="btn-primary" style="background:var(--c-crit);" onclick="openSOS()">SOS</button>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Danger popup -->
-    <div class="nav-danger-overlay">
-      <div class="danger-popup" id="danger-popup">
-        <div class="danger-head">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          DANGER AHEAD ON ROUTE
+
+    <!-- Report Screen -->
+    <div class="screen" id="screen-report">
+      <div class="inner-hdr">
+        <button class="back-btn" onclick="switchScreen('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+        <div><div class="inner-hdr-title">Report Hazard</div><div class="inner-hdr-sub">Help keep roads safe</div></div>
+      </div>
+      <div class="scrollable-body" style="max-width:600px;margin:0 auto;width:100%;">
+        <div class="sec-title">Hazard Type</div>
+        <div class="hazard-grid">
+          <button class="hz-btn sel" onclick="pickHazard(this,'Landslide')" id="h-Landslide">Landslide</button>
+          <button class="hz-btn" onclick="pickHazard(this,'Flood')" id="h-Flood">Flash Flood</button>
+          <button class="hz-btn" onclick="pickHazard(this,'Road Block')" id="h-Road Block">Road Blocked</button>
+          <button class="hz-btn" onclick="pickHazard(this,'Accident')" id="h-Accident">Accident</button>
         </div>
-        <div class="danger-msg" id="danger-msg">Heavy rainfall has increased landslide risk to 82%. A safer alternate route is available with only 18% risk.</div>
-        <button class="btn-primary btn-safe" onclick="takeSafer()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
-          TAKE SAFER ROUTE — saves risk, +8 min
-        </button>
-        <button class="btn-dismiss" onclick="dismissDanger()">Continue on current route</button>
+        <div class="sec-title" style="margin-top:16px;">Details (Optional)</div>
+        <textarea id="report-note" style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:12px;font-size:14px;min-height:80px;resize:none;width:100%;" placeholder="Add any details..."></textarea>
+        <button class="btn-primary" style="background:var(--c-crit);margin-top:16px;" onclick="submitReport()">Submit Report</button>
       </div>
     </div>
-    <!-- Risk zone pill -->
-    <div class="rz-pill" id="rz-pill">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Entering High Risk Zone
-    </div>
-    <!-- Nav SOS -->
-    <div class="nav-sos-fab">
-      <button class="sos-btn" onclick="openSOS()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        SOS
-      </button>
-    </div>
-    <!-- Nav bottom bar -->
-    <div class="nav-bottom-overlay">
-      <div class="nav-stats">
-        <div class="nav-stat"><div class="ns-val" id="ns-eta">--</div><div class="ns-lbl">ETA</div></div>
-        <div class="nav-stat"><div class="ns-val" id="ns-dist">--</div><div class="ns-lbl">Distance</div></div>
-        <div class="nav-stat"><div class="ns-val" id="ns-risk">--</div><div class="ns-lbl">Risk</div></div>
+
+    <!-- Alerts Screen -->
+    <div class="screen" id="screen-alerts">
+      <div class="inner-hdr">
+        <button class="back-btn" onclick="switchScreen('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+        <div><div class="inner-hdr-title">Live Alerts</div><div class="inner-hdr-sub">Regional Warnings</div></div>
       </div>
-      <div class="nav-btn-row">
-        <button class="btn-end" onclick="endNav()">End Route</button>
-        <button class="sos-btn" onclick="openSOS()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          SOS
-        </button>
-      </div>
+      <div class="scrollable-body" id="alerts-list" style="max-width:600px;margin:0 auto;width:100%;"></div>
     </div>
-  </div>
-</div>
 
-<!-- ---- REPORT SCREEN ---- -->
-<div class="screen" id="screen-report">
-  <div class="inner-hdr">
-    <button class="back-btn" onclick="switchScreen('home')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
-    <div><div class="inner-hdr-title">Report Road Hazard</div><div class="inner-hdr-sub">2 taps — locate — submit</div></div>
-  </div>
-  <div class="scrollable-body">
-    <div class="sec-lbl">Step 1 — Select Hazard Type</div>
-    <div class="hazard-grid">
-      <button class="hz-btn sel" onclick="pickHazard(this,'Landslide')" id="h-Landslide">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M3 20h18L14 7 9 13l-3-3L3 20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="17" cy="5" r="2" stroke="currentColor" stroke-width="1.8"/></svg>
-        Landslide
-      </button>
-      <button class="hz-btn" onclick="pickHazard(this,'Flood')" id="h-Flood">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M2 12s3-4 10-4 10 4 10 4M2 17s3-4 10-4 10 4 10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Flash Flood
-      </button>
-      <button class="hz-btn" onclick="pickHazard(this,'Road Block')" id="h-Road Block">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="2" y="9" width="20" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 9V7a4 4 0 018 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14h6M9 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Road Blocked
-      </button>
-      <button class="hz-btn" onclick="pickHazard(this,'Accident')" id="h-Accident">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM12 18v-6M12 10V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Accident
-      </button>
-      <button class="hz-btn" onclick="pickHazard(this,'Bridge Damage')" id="h-Bridge Damage">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M3 18V9a1 1 0 011-1h4m13 10V9a1 1 0 00-1-1h-4M8 8V5M16 8V5M3 18h18M8 8h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Bridge Damage
-      </button>
-      <button class="hz-btn" onclick="pickHazard(this,'Tree Fallen')" id="h-Tree Fallen">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M17 9V5l-5-3-5 3v4M3 9l9 5 9-5M12 14v7M9 21h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Tree Fallen
-      </button>
-    </div>
-    <div class="sec-lbl">Step 2 — Confirm Location</div>
-    <div class="gps-box">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="var(--c-primary)"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="var(--c-primary)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="var(--c-primary)" stroke-width="2"/></svg>
-      <span class="gps-box-text" id="report-loc">Detecting GPS location...</span>
-    </div>
-    <div class="sec-lbl">Step 3 — Notes (optional)</div>
-    <textarea class="note-area" id="report-note" placeholder="Describe what you saw — e.g. rocks covering 60% of road, single lane moving..."></textarea>
-    <button class="btn-primary btn-danger" onclick="submitReport()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-      SUBMIT HAZARD REPORT
-    </button>
-    <p style="text-align:center;font-size:12px;color:var(--c-text-3);">Your report will be verified and broadcast to all drivers in the area</p>
-  </div>
-</div>
+  </div> <!-- /main-content -->
+</div> <!-- /shell -->
 
-<!-- ---- ALERTS SCREEN ---- -->
-<div class="screen" id="screen-alerts">
-  <div class="inner-hdr">
-    <button class="back-btn" onclick="switchScreen('home')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
-    <div>
-      <div class="inner-hdr-title">Live Disaster Alerts</div>
-      <div class="inner-hdr-sub">Real-time NER corridor warnings</div>
-    </div>
-  </div>
-  <div class="alerts-scroll" id="alerts-list"></div>
-</div>
-
-<!-- ---- ADMIN PANEL SCREEN ---- -->
-<div class="screen" id="screen-admin">
-  <div class="inner-hdr" style="justify-content:space-between;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button class="back-btn" onclick="switchScreen('home')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <div>
-        <div class="inner-hdr-title" style="display:flex;align-items:center;gap:8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="color:var(--c-primary)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Admin Verification Portal
-        </div>
-        <div class="inner-hdr-sub">Verify field hazards before live alert broadcast</div>
-      </div>
-    </div>
-    <button onclick="loadAdminIncidents()" style="display:flex;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--c-text);">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Refresh
-    </button>
-  </div>
-
-  <!-- Admin Stats Ribbon -->
-  <div style="padding:12px 16px;background:var(--c-surface);border-bottom:1px solid var(--c-border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-    <div style="background:var(--c-warn-bg);border:1px solid #ffe082;border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;" onclick="switchAdminTab('Pending')">
-      <div style="font-size:11px;font-weight:700;color:var(--c-warn);text-transform:uppercase;">Pending Review</div>
-      <div id="stat-pending-count" style="font-size:18px;font-weight:800;color:var(--c-warn);margin-top:2px;">0</div>
-    </div>
-    <div style="background:var(--c-safe-bg);border:1px solid var(--c-safe-border);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;" onclick="switchAdminTab('Verified')">
-      <div style="font-size:11px;font-weight:700;color:var(--c-safe);text-transform:uppercase;">Live &amp; Verified</div>
-      <div id="stat-verified-count" style="font-size:18px;font-weight:800;color:var(--c-safe);margin-top:2px;">0</div>
-    </div>
-    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;" onclick="switchAdminTab('Rejected')">
-      <div style="font-size:11px;font-weight:700;color:var(--c-text-2);text-transform:uppercase;">Rejected</div>
-      <div id="stat-rejected-count" style="font-size:18px;font-weight:800;color:var(--c-text-2);margin-top:2px;">0</div>
-    </div>
-  </div>
-
-  <!-- Filter Tabs -->
-  <div style="display:flex;gap:6px;padding:10px 16px;background:var(--c-bg);border-bottom:1px solid var(--c-border);overflow-x:auto;">
-    <button class="admin-tab active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')">
-      Pending Verification (<span id="tab-cnt-Pending">0</span>)
-    </button>
-    <button class="admin-tab" id="tab-btn-Verified" onclick="switchAdminTab('Verified')">
-      Verified &amp; Live Alerts (<span id="tab-cnt-Verified">0</span>)
-    </button>
-    <button class="admin-tab" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')">
-      Rejected Reports (<span id="tab-cnt-Rejected">0</span>)
-    </button>
-  </div>
-
-  <!-- Admin Incidents Scrollable Body -->
-  <div class="scrollable-body" id="admin-incidents-list" style="padding:14px;gap:12px;"></div>
-</div>
-
-<!-- =============================================================
-     SOS MODAL
-============================================================= -->
+<!-- SOS MODAL -->
 <div class="modal-bg" id="sos-modal" onclick="closeSOS(event)">
   <div class="modal-sheet">
-    <div class="modal-title">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Emergency Assistance
-    </div>
-    <p class="modal-sub">Instantly alert responders and share your GPS location.</p>
+    <div style="font-size:18px;font-weight:600;color:var(--c-crit);">Emergency SOS</div>
     <div class="sos-action-grid">
-      <button class="sos-action call" onclick="callNum('112')">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Call 112<br/><span style="font-size:11px;font-weight:600">Police / Medical</span>
-      </button>
-      <button class="sos-action call" onclick="callNum('1070')">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Call 1070<br/><span style="font-size:11px;font-weight:600">State Disaster</span>
-      </button>
-      <button class="sos-action" onclick="shareLocation()">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Share Location<br/><span style="font-size:11px;font-weight:600">WhatsApp / SMS</span>
-      </button>
-      <button class="sos-action" onclick="closeSOS();switchScreen('report')">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Report Hazard<br/><span style="font-size:11px;font-weight:600">Road / Landslide</span>
-      </button>
+      <button class="sos-action call" onclick="callNum('112')">Call 112 (Police/Med)</button>
+      <button class="sos-action call" onclick="callNum('1070')">Call 1070 (Disaster)</button>
+      <button class="sos-action" onclick="shareLocation()">Share GPS via SMS</button>
+      <button class="sos-action" onclick="closeSOS();switchScreen('report')">Report Hazard</button>
     </div>
-    <button onclick="closeSOS()" style="width:100%;padding:13px;background:var(--c-bg);border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--c-text);">Cancel</button>
+    <button class="btn-primary" style="background:var(--c-bg);color:var(--c-text);border:1px solid var(--c-border);" onclick="closeSOS()">Cancel</button>
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- =============================================================
-     LEAFLET + APP LOGIC
-============================================================= -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+
 /* ---- STATE ---- */
 let pos={lat:26.1445,lon:91.7362},homeMap=null,navMap=null,userPin=null,routeLine=null,navLine=null,selHazard='Landslide',navTimer=null,dangerShown=false;
 
@@ -1885,6 +1199,13 @@ function applyLang(){
 /* ---- TOAST ---- */
 let _tt;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// --- NEW JS ADDITIONS FOR APPLE UI ---
+function toggleWeather(e) { e.stopPropagation(); document.getElementById('wx-popover').classList.toggle('show'); }
+window.addEventListener('click', (e) => {
+  const p = document.getElementById('wx-popover');
+  if(p && p.classList.contains('show') && !e.target.closest('.wx-widget')) p.classList.remove('show');
+});
 </script>
 </body>
 </html>
