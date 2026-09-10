@@ -1,5 +1,76 @@
-from typing import List, Dict, Any
+import logging
+import httpx
+from typing import List, Dict, Any, Tuple, Optional
 from app.models import RoadSegment
+from app.config import settings
+
+logger = logging.getLogger("routing_service")
+
+# Known coordinates for NER cities/nodes (used for GraphHopper OSM routing)
+NER_GEO_LOOKUP = {
+    "guwahati": (26.1445, 91.7362),
+    "shillong": (25.5788, 91.8933),
+    "silchar": (24.8333, 92.7789),
+    "jorhat": (26.7509, 94.2037),
+    "itanagar": (27.0844, 93.6053),
+    "dimapur": (25.9042, 93.7242),
+    "tawang": (27.5860, 91.8594),
+    "nongpoh": (25.9001, 91.8805),
+    "umiam": (25.6667, 91.9000),
+    "tezpur": (26.6338, 92.8000),
+}
+
+def resolve_coords(place_str: str) -> Optional[Tuple[float, float]]:
+    """Resolves coordinates from string name or comma-separated lat,lon."""
+    cleaned = place_str.lower().strip()
+    for name, coords in NER_GEO_LOOKUP.items():
+        if name in cleaned:
+            return coords
+    if "," in place_str:
+        try:
+            parts = [float(p.strip()) for p in place_str.split(",")]
+            if len(parts) == 2:
+                return (parts[0], parts[1])
+        except Exception:
+            pass
+    return None
+
+def fetch_graphhopper_route(origin: Tuple[float, float], dest: Tuple[float, float]) -> Optional[Dict[str, Any]]:
+    """Queries local GraphHopper container for native OSM path, distance, ETA and geometry."""
+    url = f"{settings.GRAPHHOPPER_URL}/route"
+    params = {
+        "point": [f"{origin[0]},{origin[1]}", f"{dest[0]},{dest[1]}"],
+        "profile": "car",
+        "points_encoded": "false"
+    }
+    try:
+        with httpx.Client(timeout=4.0) as client:
+            resp = client.get(url, params=params)
+            if resp.status_code == 200:
+                data = resp.json()
+                paths = data.get("paths", [])
+                if paths:
+                    p = paths[0]
+                    raw_coords = p.get("points", {}).get("coordinates", [])
+                    # Subsample points for performance ([lat, lon])
+                    step = max(1, len(raw_coords) // 200)
+                    leaf_pts = [[round(pt[1], 5), round(pt[0], 5)] for pt in raw_coords[::step]]
+                    if raw_coords and leaf_pts[-1] != [round(raw_coords[-1][1], 5), round(raw_coords[-1][0], 5)]:
+                        leaf_pts.append([round(raw_coords[-1][1], 5), round(raw_coords[-1][0], 5)])
+                    
+                    instructions = [
+                        {"text": inst.get("text"), "distance_m": round(inst.get("distance", 0), 1)}
+                        for inst in p.get("instructions", [])[:10]
+                    ]
+                    return {
+                        "distance_km": round(p.get("distance", 0) / 1000.0, 1),
+                        "eta_minutes": round(p.get("time", 0) / 60000.0, 1),
+                        "geometry_points": leaf_pts,
+                        "instructions": instructions
+                    }
+    except Exception as e:
+        logger.warning(f"GraphHopper offline or unroutable: {e}")
+    return None
 
 def compute_priority_weights(priority_class: str) -> Dict[str, float]:
     """
@@ -30,6 +101,11 @@ def calculate_candidate_routes(
     """
     weights = compute_priority_weights(priority_class)
     
+    # Try native GraphHopper routing if coordinates can be resolved
+    o_coords = resolve_coords(origin) or (26.1445, 91.7362)
+    d_coords = resolve_coords(destination) or (25.5788, 91.8933)
+    gh_data = fetch_graphhopper_route(o_coords, d_coords)
+
     # Corridor 1: Main Direct Arterial Highway (NH-6 / NH-13 / NH-15)
     main_corridor = [s for s in all_segments if "NH-6" in s.road_name or "NH-13" in s.road_name or "NH-15" in s.road_name]
     if not main_corridor:
@@ -38,9 +114,9 @@ def calculate_candidate_routes(
     # Hard Constraint Check: Check for Blocked segments
     has_blocked_main = any(s.status == "Blocked" for s in main_corridor)
     
-    dist_1 = sum(s.length_km for s in main_corridor) or 180.0
+    dist_1 = gh_data["distance_km"] if gh_data else (sum(s.length_km for s in main_corridor) or 180.0)
     avg_risk_1 = (sum(s.risk_score for s in main_corridor) / len(main_corridor)) if main_corridor else 55.0
-    time_1 = (dist_1 / 45.0) * 60.0  # minutes
+    time_1 = gh_data["eta_minutes"] if gh_data else ((dist_1 / 45.0) * 60.0)  # minutes
 
     # Calculate RouteScore components
     t_norm_1 = time_1 / 60.0
@@ -81,7 +157,9 @@ def calculate_candidate_routes(
             "distance_weight": weights["wD"],
             "risk_weight": weights["wR"],
             "priority_class": priority_class
-        }
+        },
+        "geometry_points": gh_data["geometry_points"] if gh_data else None,
+        "turn_instructions": gh_data["instructions"] if gh_data else None
     }
 
     # Corridor 2: AI Risk-Optimized Safe Bypass Corridor
@@ -125,7 +203,9 @@ def calculate_candidate_routes(
             "distance_weight": weights["wD"],
             "risk_weight": weights["wR"],
             "priority_class": priority_class
-        }
+        },
+        "geometry_points": gh_data["geometry_points"] if gh_data else None,
+        "turn_instructions": gh_data["instructions"] if gh_data else None
     }
 
     # Rank Candidate Routes (Lowest RouteScore first)

@@ -1,12 +1,16 @@
 export interface RoadSegment {
   id: number;
-  segment_id: str;
+  segment_id: string;
   road_name: string;
   road_class: string;
   district: string;
   state: string;
   start_coords: [number, number];
   end_coords: [number, number];
+  start_lat?: number;
+  start_lon?: number;
+  end_lat?: number;
+  end_lon?: number;
   bridge_id?: string;
   length_km: number;
   terrain_type: string;
@@ -60,11 +64,12 @@ export interface RouteRecommendation {
   reliability_percentage: number;
   recommendation_label: string;
   segments: RoadSegment[];
-  score_breakdown: {
-    time_weight: number;
-    distance_weight: number;
-    risk_weight: number;
-    priority_class: string;
+  score_breakdown?: {
+    time_weight?: number;
+    distance_weight?: number;
+    risk_weight?: number;
+    priority_class?: string;
+    composite_route_score?: string | number;
   };
 }
 

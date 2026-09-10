@@ -86,6 +86,8 @@ class RouteRecommendation(BaseModel):
     recommendation_label: str # "Recommended", "Caution", "Avoid - Blocked"
     segments: List[RoadSegmentResponse]
     score_breakdown: dict
+    geometry_points: Optional[List[List[float]]] = None
+    turn_instructions: Optional[List[dict]] = None
 
 class AlertResponse(BaseModel):
     id: int

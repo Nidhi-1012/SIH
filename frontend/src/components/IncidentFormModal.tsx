@@ -22,13 +22,15 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const seg = segments.find(s => s.segment_id === selectedSegmentId) || segments[0];
+    const lat = (seg?.start_coords ? seg.start_coords[0] : (seg?.start_lat || 26.0)) + 0.02;
+    const lon = (seg?.start_coords ? seg.start_coords[1] : (seg?.start_lon || 91.8)) + 0.02;
     
     onSubmit({
       segment_id: selectedSegmentId,
       incident_type: incidentType,
       severity: severity,
-      lat: seg.start_lat + 0.05,
-      lon: seg.start_lon + 0.05,
+      lat: Number(lat.toFixed(4)),
+      lon: Number(lon.toFixed(4)),
       notes: notes || 'Severe mudslide reported across both highway lanes.',
       reporter: reporter
     });

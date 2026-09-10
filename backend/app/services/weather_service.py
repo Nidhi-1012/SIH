@@ -43,6 +43,7 @@ class OpenMeteoWeatherProvider(WeatherProviderInterface):
                     r_6h = sum(precip[:6]) if len(precip) >= 6 else 0.0
                     r_24h = sum(precip[:24]) if len(precip) >= 24 else 0.0
                     
+                    import datetime
                     return {
                         "district": district,
                         "rainfall_1h": round(r_1h, 1),
@@ -51,7 +52,8 @@ class OpenMeteoWeatherProvider(WeatherProviderInterface):
                         "forecast_24h_rain": round(r_24h * 1.2, 1),
                         "wind_speed": round(data.get("current_weather", {}).get("windspeed", 10.0), 1),
                         "temperature": round(data.get("current_weather", {}).get("temperature", 22.0), 1),
-                        "source": "Open-Meteo API (Live)"
+                        "source": "Open-Meteo API (Live)",
+                        "timestamp": datetime.datetime.utcnow().isoformat()
                     }
         except Exception as e:
             logger.warning(f"Failed to fetch live weather from Open-Meteo: {e}")

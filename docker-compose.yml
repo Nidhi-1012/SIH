@@ -37,17 +37,25 @@ services:
       timeout: 5s
       retries: 5
 
-  # 3. GraphHopper Routing Engine
-  # Uncomment this once we download the map data (.osm.pbf file) in the next step.
-  # graphhopper:
-  #   image: graphhopper/graphhopper:8.0
-  #   container_name: ner_link_routing
-  #   ports:
-  #     - "8989:8989"
-  #   volumes:
-  #     - ./data/osm:/data
-  #   environment:
-  #     - JAVA_OPTS=-Xmx2g -Xms2g
+  # 3. GraphHopper Routing Engine (Native OSM routing for NE India corridors)
+  graphhopper:
+    image: israelhikingmap/graphhopper:latest
+    container_name: ner_link_routing
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./data/osm:/data
+      - ./graphhopper/config.yml:/graphhopper/config.yml
+    environment:
+      - JAVA_OPTS=-Xmx2g -Xms1g
+    command: ["-c", "/graphhopper/config.yml"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8989/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
 
 volumes:
   postgis_data:

@@ -88,8 +88,26 @@ def seed_database():
 
 @app.get("/health")
 def health_check():
+    import redis
+    try:
+        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r.ping()
+        redis_status = "connected"
+    except Exception as e:
+        redis_status = f"disconnected ({str(e)})"
+
+    try:
+        from sqlalchemy import text
+        db = next(get_db())
+        db.execute(text("SELECT 1"))
+        db_status = "connected (PostgreSQL/PostGIS)"
+    except Exception as e:
+        db_status = f"disconnected ({str(e)})"
+
     return {
         "status": "healthy",
+        "database": db_status,
+        "redis": redis_status,
         "service": settings.PROJECT_NAME,
         "environment": settings.ENVIRONMENT,
         "emergency_mode": EMERGENCY_MODE,
