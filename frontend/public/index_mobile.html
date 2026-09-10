@@ -7,6 +7,7 @@
 <title>NER SafeRoute — AI Safe Navigation</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
 <style>
 /* =============================================================
    APPLE-INSPIRED DESIGN SYSTEM
@@ -256,6 +257,34 @@ svg { display: block; flex-shrink: 0; }
 
 .roc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .roc-chip { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 6px; padding: 4px 8px; font-size: 11px; color: var(--c-text-2); display: flex; align-items: center; gap: 4px; font-weight: 500; }
+
+/* Apple UI for Routing Machine */
+.leaflet-routing-container {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
+  color: var(--c-text) !important;
+  margin-top: 80px !important;
+  margin-right: 16px !important;
+  max-width: 320px !important;
+  max-height: 50vh !important;
+  overflow-y: auto !important;
+}
+@media(max-width: 768px) {
+  .leaflet-routing-container { margin-top: 100px !important; max-height: 40vh !important; max-width: calc(100vw - 32px) !important; }
+}
+.leaflet-routing-container h2, .leaflet-routing-container h3 { display: none; }
+.leaflet-routing-alt { max-height: none !important; border-bottom: none !important; padding-bottom: 0 !important; }
+.leaflet-routing-alt table { border-spacing: 0; width: 100%; }
+.leaflet-routing-alt tr { border-bottom: 1px solid var(--c-border); transition: background 0.15s; }
+.leaflet-routing-alt tr:last-child { border-bottom: none; }
+.leaflet-routing-alt tr:hover { background: rgba(0,0,0,0.03); }
+.leaflet-routing-alt td { padding: 12px 10px; font-size: 13px; font-weight: 500; line-height: 1.4; }
+.leaflet-routing-icon { filter: grayscale(100%) opacity(0.7); margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -463,6 +492,7 @@ svg { display: block; flex-shrink: 0; }
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 <script>
 
 /* ---- STATE ---- */
@@ -749,24 +779,41 @@ function svgFlood(){return '<svg width="13" height="13" viewBox="0 0 24 24" fill
 function svgRoad(){return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 20L9 4M15 4l4 16M9 4h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
 
 /* ---- NAVIGATION ---- */
+let navRoutingControl = null;
 function startNav(r){
   switchScreen('nav');
   if(!navMap){
     navMap=L.map('nav-map',{zoomControl:false,attributionControl:false}).setView([pos.lat,pos.lon],12);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(navMap);
   } else setTimeout(()=>navMap.invalidateSize(),150);
-  if(r.pts){
-    if(navLine)navMap.removeLayer(navLine);
-    navLine=L.polyline(r.pts,{color:r.type==='safest'?'#1a73e8':'#ea4335',weight:7,opacity:.85}).addTo(navMap);
-    navMap.fitBounds(navLine.getBounds(),{padding:[80,100]});
+
+  if(r.pts && r.pts.length > 0){
+    if(navRoutingControl) navMap.removeControl(navRoutingControl);
+    
+    const startPt = r.pts[0];
+    const endPt = r.pts[r.pts.length - 1];
+
+    // Integrate Free Turn-by-Turn via OSRM
+    navRoutingControl = L.Routing.control({
+        waypoints: [ L.latLng(startPt[0], startPt[1]), L.latLng(endPt[0], endPt[1]) ],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        fitSelectedRoutes: true,
+        showAlternatives: false,
+        lineOptions: { styles: [{color: '#0071e3', opacity: 0.85, weight: 6}] },
+        createMarker: function() { return null; },
+        formatter: new L.Routing.Formatter({ language: 'en' })
+    }).addTo(navMap);
+
     const ic=L.divIcon({html:'<div style="width:20px;height:20px;background:#1a73e8;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 12px rgba(26,115,232,.6)"></div>',className:'',iconAnchor:[10,10]});
-    L.marker(r.pts[0],{icon:ic}).addTo(navMap);
+    L.marker(startPt,{icon:ic}).addTo(navMap);
   }
-  const rm=riskClass(r.overall);
+
   document.getElementById('ns-eta').textContent=r.time;
   document.getElementById('ns-dist').textContent=r.dist;
   document.getElementById('ns-risk').textContent=r.overall+'%';
   document.getElementById('ns-risk').style.color=riskColor(r.overall);
+
   navStep=0;dangerShown=false;updateStep();
   clearInterval(navTimer);
   navTimer=setInterval(()=>{
@@ -775,9 +822,13 @@ function startNav(r){
       dangerShown=true;
       document.getElementById('danger-msg').textContent=`Heavy rainfall has increased landslide risk to ${r.overall}% near this section. A safer alternate route is available with only 18% risk.`;
       document.getElementById('danger-popup').classList.add('show');
-      document.getElementById('rz-pill').classList.add('show');
+      const rzp = document.getElementById('rz-pill');
+      if(rzp) rzp.classList.add('show');
     }
-    if(navStep!==3)document.getElementById('rz-pill').classList.remove('show');
+    if(navStep!==3){
+        const rzp2 = document.getElementById('rz-pill');
+        if(rzp2) rzp2.classList.remove('show');
+    }
   },7000);
 }
 function updateStep(){
@@ -794,7 +845,17 @@ function takeSafer(){
   showToast('Switched to safer route — risk reduced to 18%');
 }
 function dismissDanger(){document.getElementById('danger-popup').classList.remove('show');}
-function endNav(){clearInterval(navTimer);document.getElementById('danger-popup').classList.remove('show');document.getElementById('rz-pill').classList.remove('show');switchScreen('home');}
+function endNav(){
+  clearInterval(navTimer);
+  document.getElementById('danger-popup').classList.remove('show');
+  const rzp = document.getElementById('rz-pill');
+  if(rzp) rzp.classList.remove('show');
+  if(navRoutingControl) {
+      navMap.removeControl(navRoutingControl);
+      navRoutingControl = null;
+  }
+  switchScreen('home');
+}
 
 /* ---- REPORT ---- */
 let selectedHazardBtn=document.getElementById('h-Landslide');
