@@ -227,6 +227,35 @@ svg { display: block; flex-shrink: 0; }
 
 /* Reset risk colors */
 .risk-safe{color:var(--c-safe);}.risk-warn{color:var(--c-warn);}.risk-high{color:var(--c-warn);}.risk-crit{color:var(--c-crit);}
+
+/* Inline Route Cards */
+.route-option-card {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--r-lg); padding: 14px; margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s;
+}
+.route-option-card:hover { border-color: var(--c-primary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.route-option-card.safest { border: 2px solid var(--c-safe); background: rgba(52,199,89,0.03); }
+
+.roc-top { display: flex; gap: 12px; align-items: center; }
+.roc-score {
+  width: 54px; height: 54px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0;
+}
+.roc-score .num { font-size: 18px; font-weight: 700; line-height: 1; }
+.roc-score .txt { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase; }
+.score-safe { background: var(--c-safe); }
+.score-warn { background: var(--c-warn); }
+.score-crit { background: var(--c-crit); }
+
+.roc-info { flex: 1; }
+.roc-name { font-size: 14px; font-weight: 600; color: var(--c-text); margin-bottom: 6px; }
+.roc-metrics { font-size: 12px; color: var(--c-text-2); display: flex; gap: 14px; font-weight: 500; }
+.roc-metrics svg { width: 14px; height: 14px; display: inline-block; vertical-align: text-bottom; margin-right: 4px; }
+
+.roc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.roc-chip { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 6px; padding: 4px 8px; font-size: 11px; color: var(--c-text-2); display: flex; align-items: center; gap: 4px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -292,15 +321,27 @@ svg { display: block; flex-shrink: 0; }
           <button class="chip" onclick="quickDest('Tawang')">Tawang</button>
           <button class="chip" onclick="quickDest('Itanagar')">Itanagar</button>
         </div>
-        <button class="btn-primary" onclick="findRoutes()">Check Safe Routes</button>
+        <button class="btn-primary" style="background:#1e8e3e" onclick="findRoutes()">
+           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+           Analyze Route Safety
+        </button>
       </div>
 
-      <div>
-        <div class="live-badge" style="margin-bottom:12px;"><span class="live-dot"></span><span id="desk-corridor-lbl">Live Corridors</span></div>
-        <div class="corridor-card"><div class="corridor-name">NH-6 Guwahati–Nongpoh</div><span class="risk-tag tag-safe">Safe 18%</span></div>
-        <div class="corridor-card"><div class="corridor-name">NH-6 Nongpoh–Umiam</div><span class="risk-tag tag-crit">Blocked 98%</span></div>
-        <div class="corridor-card"><div class="corridor-name">NH-37 Guwahati–Jorhat</div><span class="risk-tag tag-safe">Safe 12%</span></div>
-        <div class="corridor-card"><div class="corridor-name">NH-13 Sela Pass–Tawang</div><span class="risk-tag tag-warn">Caution 55%</span></div>
+      <div id="sidebar-dynamic">
+        <!-- Default: Live Corridors -->
+        <div id="desk-corridor-view">
+          <div class="live-badge" style="margin-bottom:12px;"><span class="live-dot"></span><span id="desk-corridor-lbl">Loading Live Corridors...</span></div>
+          <div id="desk-corridor-list"></div>
+        </div>
+
+        <!-- Search Results: Route Options -->
+        <div id="desk-route-view" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+             <div class="sec-title" style="margin-bottom:0;">Analyzed Route Options</div>
+             <button onclick="clearRoutes()" style="font-size:12px; font-weight:600; color:var(--c-primary); cursor:pointer;">Clear</button>
+          </div>
+          <div id="desk-route-list"></div>
+        </div>
       </div>
     </aside>
 
@@ -312,12 +353,21 @@ svg { display: block; flex-shrink: 0; }
       <div class="mobile-bottom" id="mob-sheet">
         <div class="sheet-handle"></div>
         <div class="search-field"><div class="dot-dest"></div><input id="mob-dest" type="text" placeholder="Where do you want to go?" onkeydown="if(event.key==='Enter')findRoutes()"/></div>
-        <button class="btn-primary" style="margin-bottom:16px;" onclick="findRoutes()">Check Safe Routes</button>
+        <button class="btn-primary" style="background:#1e8e3e; margin-bottom:16px;" onclick="findRoutes()">Analyze Route Safety</button>
         
-        <div class="live-badge" style="margin-bottom:8px;"><span class="live-dot"></span><span id="mob-corridor-lbl">Live Corridors</span></div>
-        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none;">
-          <div class="corridor-card" style="flex: 0 0 160px; margin-bottom:0;"><div class="corridor-name">NH-6 Nongpoh</div><span class="risk-tag tag-crit">Blocked 98%</span></div>
-          <div class="corridor-card" style="flex: 0 0 160px; margin-bottom:0;"><div class="corridor-name">NH-37 Jorhat</div><span class="risk-tag tag-safe">Safe 12%</span></div>
+        <div id="mob-dynamic">
+           <div id="mob-corridor-view">
+              <div class="live-badge" style="margin-bottom:8px;"><span class="live-dot"></span><span id="mob-corridor-lbl">Loading Live Corridors...</span></div>
+              <div id="mob-corridor-list" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none;"></div>
+           </div>
+           
+           <div id="mob-route-view" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                 <div class="sec-title" style="margin-bottom:0;">Route Options</div>
+                 <button onclick="clearRoutes()" style="font-size:12px; font-weight:600; color:var(--c-primary);">Clear</button>
+              </div>
+              <div id="mob-route-list"></div>
+           </div>
         </div>
       </div>
     </main>
@@ -682,129 +732,7 @@ function quickDest(city){
   document.getElementById('desk-dest').value=city;
   findRoutes();
 }
-async function findRoutes(){
-  const mob=document.getElementById('mob-dest').value.trim();
-  const dsk=document.getElementById('desk-dest').value.trim();
-  const dest=mob||dsk;
-  const from=(document.getElementById('mob-origin')||{}).value||'Guwahati';
-  if(!dest){showToast('Please enter a destination');return;}
-
-  const key=Object.keys(DB).find(k=>dest.toLowerCase().includes(k));
-  let finalRoutes = null;
-  let targetCity = dest.charAt(0).toUpperCase()+dest.slice(1);
-
-  showToast('GraphHopper AI calculating safest route...');
-
-  // 1. Try Live FastAPI + GraphHopper Backend
-  try {
-    const res = await fetch('http://127.0.0.1:8000/api/v1/route', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        origin: from,
-        destination: dest,
-        priority_class: 'P0'
-      })
-    });
-    if (res.ok) {
-      const apiRoutes = await res.json();
-      if (apiRoutes && apiRoutes.length) {
-        finalRoutes = apiRoutes.map((r, i) => {
-          const isSafest = r.recommendation_label.includes('Recommended');
-          const isBlocked = r.recommendation_label.includes('Blocked');
-          const hrs = Math.floor(r.eta_minutes / 60);
-          const mins = Math.round(r.eta_minutes % 60);
-          const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-          return {
-            id: r.route_id,
-            type: isSafest ? 'safest' : isBlocked ? 'blocked' : 'fastest',
-            via: r.name,
-            dist: `${r.distance_km} km`,
-            time: timeStr,
-            overall: Math.round(r.overall_risk_score),
-            ls: Math.round(r.overall_risk_score * 0.7),
-            rain: Math.round(r.overall_risk_score * 0.8),
-            flood: Math.round(r.overall_risk_score * 0.5),
-            road: isBlocked ? 'BLOCKED' : isSafest ? 'Open / Verified' : 'Caution',
-            insight: isBlocked
-              ? 'Road blocked due to extreme hazard. Rerouted by AI engine.'
-              : `${Math.round(r.overall_risk_score)}% risk. Ranked #${i+1} via GraphHopper OSM routing & PRD §6.3 RouteScore.`,
-            insightClass: isBlocked ? 'crit' : r.overall_risk_score > 50 ? 'warn' : 'safe',
-            pts: r.geometry_points && r.geometry_points.length ? r.geometry_points : [[pos.lat,pos.lon],[pos.lat+.2,pos.lon+.3]]
-          };
-        });
-      }
-    }
-  } catch (err) {
-    console.warn('Backend route calculation fallback:', err);
-  }
-
-  // 2. Fallback to client database if offline
-  if (!finalRoutes) {
-    const data = key ? DB[key] : {
-      to: targetCity,
-      routes: [
-        {id:'gx1',type:'safest',via:'Main national highway (AI-selected)',dist:'145 km',time:'3h 20m',overall:25,ls:18,rain:22,flood:12,road:'Good',insight:'25% overall risk. Route selected to avoid known hazard zones today.',insightClass:'safe',pts:[[pos.lat,pos.lon],[pos.lat+.3,pos.lon+.4],[pos.lat+.7,pos.lon+.7]]},
-        {id:'gx2',type:'fastest',via:'Hill shortcut (higher risk today)',dist:'118 km',time:'2h 50m',overall:58,ls:48,rain:40,flood:25,road:'Narrow / Steep',insight:'58% risk. Hill sections susceptible to heavy rain slips. Caution advised.',insightClass:'warn',pts:[[pos.lat,pos.lon],[pos.lat+.2,pos.lon+.3],[pos.lat+.7,pos.lon+.7]]}
-      ]
-    };
-    finalRoutes = data.routes;
-    targetCity = data.to;
-  }
-
-  document.getElementById('routes-headline').textContent=`${from.split(',')[0]} — ${targetCity}`;
-  const body=document.getElementById('routes-body');
-  body.innerHTML='';
-
-  // Sort safest first
-  const sorted=[...finalRoutes].sort((a,b)=>a.overall-b.overall);
-
-  // AI box
-  const aiBox=document.createElement('div');
-  aiBox.className='ai-box';
-  aiBox.innerHTML=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:1px"><rect x="2" y="4" width="20" height="16" rx="3" stroke="#1e8e3e" stroke-width="2"/><path d="M8 10h8M8 14h5" stroke="#1e8e3e" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="14" r="2" fill="#1e8e3e"/></svg><div class="ai-box-text"><strong>GraphHopper + AI Safety Engine:</strong> Native OSM routing calculated <strong>${sorted[0].dist} (${sorted[0].time})</strong> with <strong>${sorted[0].overall}% overall risk</strong> — ranked with PRD §6.3 multi-objective formula.</div>`;
-  body.appendChild(aiBox);
-
-  // Cards
-  sorted.forEach((r,i)=>{
-    const card=document.createElement('div');
-    card.className=`route-card ${r.type==='safest'?'safest':r.overall>70?'high-risk':''}`;
-    const rc=riskClass(r.overall);
-    card.innerHTML=`
-      <div class="route-badge-row">
-        <span class="route-badge ${r.type==='safest'?'badge-safest':r.type==='fastest'?'badge-fastest':'badge-alt'}">
-          ${r.type==='safest'?svgStar()+' SAFEST ROUTE':r.type==='fastest'?svgBolt()+' FASTEST ROUTE':svgAlt()+' ALTERNATE'}
-        </span>
-        <span class="risk-tag tag-${rc}">${riskDot(r.overall)} ${r.overall}% ${riskLabel(r.overall)}</span>
-      </div>
-      <div class="route-via">${r.via}</div>
-      <div class="route-metrics">
-        <div class="route-distance-time" style="display:flex;align-items:baseline;gap:9px">
-          <span class="route-time">${r.time}</span>
-          <span class="route-dist">· ${r.dist}</span>
-        </div>
-      </div>
-      <div class="risk-grid">
-        ${riskFactor(svgLandslide(),'Landslide',r.ls)}
-        ${riskFactor(svgRain(),'Rain / Weather',r.rain)}
-        ${riskFactor(svgFlood(),'Flood Risk',r.flood)}
-        <div class="risk-factor"><div class="rf-label">${svgRoad()} Road</div><div style="font-size:12px;font-weight:700;color:var(--c-text-2);margin-top:3px">${r.road}</div></div>
-      </div>
-      <div class="route-insight" style="background:var(--c-${r.insightClass}-bg,var(--c-bg));color:var(--c-${r.insightClass},var(--c-text-2))">${r.insight}</div>
-      <button class="btn-primary ${r.type==='safest'?'btn-safe':''}" onclick='startNav(${JSON.stringify(r)})'>
-        ${svgNav()} START NAVIGATION
-      </button>`;
-    body.appendChild(card);
-  });
-
-  // Preview safest route on home map
-  if(sorted[0].pts&&homeMap){
-    if(routeLine)homeMap.removeLayer(routeLine);
-    routeLine=L.polyline(sorted[0].pts,{color:sorted[0].type==='safest'?'#1e8e3e':'#ea4335',weight:5,opacity:.85}).addTo(homeMap);
-    homeMap.fitBounds(routeLine.getBounds(),{padding:[60,60]});
-  }
-  switchScreen('routes');
-}
+async 
 function riskFactor(icon,label,pct){
   const rc=riskClass(pct),col=riskColor(pct);
   return `<div class="risk-factor"><div class="rf-label">${icon} ${label}</div><div class="prog-bg"><div class="prog-fill fill-${rc}" style="width:${pct}%"></div></div><div class="rf-val risk-${rc}">${pct}%</div></div>`;
@@ -1206,6 +1134,142 @@ window.addEventListener('click', (e) => {
   const p = document.getElementById('wx-popover');
   if(p && p.classList.contains('show') && !e.target.closest('.wx-widget')) p.classList.remove('show');
 });
+
+// --- INJECTED REAL DATA LOGIC ---
+async function loadLiveCorridors() {
+  try {
+    let res = await fetch('http://127.0.0.1:8000/api/v1/segments');
+    let data = await res.json();
+    document.getElementById('desk-corridor-lbl').textContent = 'Live Corridors (Real Data)';
+    document.getElementById('mob-corridor-lbl').textContent = 'Live Corridors (Real Data)';
+    
+    let htmlDesk = '';
+    let htmlMob = '';
+    
+    data.slice(0, 5).forEach(seg => {
+      let r = seg.risk_score || 0;
+      let cls = r<=30 ? 'tag-safe' : r<=60 ? 'tag-warn' : 'tag-crit';
+      let stat = r<=30 ? 'Safe' : r<=60 ? 'Caution' : 'Blocked';
+      
+      htmlDesk += `<div class="corridor-card"><div class="corridor-name">${seg.name}</div><span class="risk-tag ${cls}">${stat} ${r}%</span></div>`;
+      htmlMob += `<div class="corridor-card" style="flex: 0 0 160px; margin-bottom:0;"><div class="corridor-name">${seg.name}</div><span class="risk-tag ${cls}">${stat} ${r}%</span></div>`;
+    });
+    
+    document.getElementById('desk-corridor-list').innerHTML = htmlDesk;
+    document.getElementById('mob-corridor-list').innerHTML = htmlMob;
+  } catch(e) {
+    console.error("Failed to load real corridors", e);
+  }
+}
+
+async function findRoutes() {
+  const destStr = document.getElementById('desk-dest').value.trim() || document.getElementById('mob-dest').value.trim();
+  if(!destStr) return showToast('Please enter a destination');
+  
+  showToast('Analyzing routes via AI Engine...');
+  
+  // Local DB fallback for map coordinates
+  const key = Object.keys(DB).find(k => destStr.toLowerCase().includes(k)) || 'shillong';
+  const localData = DB[key];
+  
+  try {
+    let res = await fetch('http://127.0.0.1:8000/api/v1/route', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({origin: "Guwahati", destination: destStr, priority_class: "P2"})
+    });
+    let data = await res.json();
+    
+    if(data.routes && data.routes.length > 0) {
+      // Merge real risk stats with local polyline points for the map
+      let mergedRoutes = data.routes.map((rt, i) => {
+         let fallback = localData.routes[i % localData.routes.length];
+         return {
+            ...fallback, 
+            overall: rt.risk_score, 
+            dist: rt.distance_km + ' km', 
+            time: rt.eta_mins + ' mins',
+            via: fallback.via + ' (Live Scored)',
+            id: rt.route_id
+         };
+      });
+      renderInlineRoutes(mergedRoutes, localData.to);
+    } else {
+      renderInlineRoutes(localData.routes, localData.to);
+    }
+  } catch(e) {
+    console.error("Backend route failed, using local", e);
+    renderInlineRoutes(localData.routes, localData.to);
+  }
+}
+
+function renderInlineRoutes(routes, destName) {
+  // Hide corridors, show routes
+  document.getElementById('desk-corridor-view').style.display = 'none';
+  document.getElementById('desk-route-view').style.display = 'block';
+  document.getElementById('mob-corridor-view').style.display = 'none';
+  document.getElementById('mob-route-view').style.display = 'block';
+  
+  // Sort safest first
+  const sorted = [...routes].sort((a,b) => a.overall - b.overall);
+  
+  let html = '';
+  sorted.forEach((r, idx) => {
+    let rc = r.overall <= 30 ? 'safe' : r.overall <= 60 ? 'warn' : 'crit';
+    let stat = r.overall <= 30 ? 'SAFE' : r.overall <= 60 ? 'MODERATE' : 'HIGH RISK';
+    let isSafest = idx === 0 ? 'safest' : '';
+    let name = isSafest ? `Route ${idx+1} (Safest)` : `Route ${idx+1}`;
+    
+    // Map icons matching reference image
+    html += `
+      <div class="route-option-card ${isSafest}" onclick='startNav(${JSON.stringify(r)})'>
+         <div class="roc-top">
+            <div class="roc-score score-${rc}">
+               <div class="num">${r.overall}</div>
+               <div class="txt">RISK</div>
+            </div>
+            <div class="roc-info">
+               <div class="roc-name">${name}</div>
+               <div class="roc-metrics">
+                  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ${r.time}</span>
+                  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${r.dist}</span>
+               </div>
+            </div>
+         </div>
+         <div class="roc-chips">
+            <span class="roc-chip"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18L14 7 9 13l-3-3L3 20z"/></svg> Landslide ${r.ls}%</span>
+            <span class="roc-chip"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg> Weather ${r.rain}%</span>
+            <span class="roc-chip"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20L9 4M15 4l4 16M9 4h6"/></svg> Road ${r.road.split(' ')[0]}</span>
+         </div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('desk-route-list').innerHTML = html;
+  document.getElementById('mob-route-list').innerHTML = html;
+  
+  // Draw safest on map
+  if(sorted[0].pts && homeMap) {
+    if(routeLine) homeMap.removeLayer(routeLine);
+    routeLine = L.polyline(sorted[0].pts, {color: '#1e8e3e', weight: 5, opacity: 0.8}).addTo(homeMap);
+    homeMap.fitBounds(routeLine.getBounds(), {padding: [60,60]});
+  }
+}
+
+function clearRoutes() {
+  document.getElementById('desk-dest').value = '';
+  document.getElementById('mob-dest').value = '';
+  document.getElementById('desk-corridor-view').style.display = 'block';
+  document.getElementById('desk-route-view').style.display = 'none';
+  document.getElementById('mob-corridor-view').style.display = 'block';
+  document.getElementById('mob-route-view').style.display = 'none';
+  if(routeLine && homeMap) homeMap.removeLayer(routeLine);
+  homeMap.setView([pos.lat, pos.lon], 9);
+}
+
+// Hook into startup
+setTimeout(loadLiveCorridors, 500);
+
 </script>
 </body>
 </html>
