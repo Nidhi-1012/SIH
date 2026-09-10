@@ -592,6 +592,23 @@ svg{display:block;flex-shrink:0}
   font-size:12px;font-weight:700;cursor:pointer;
 }
 .lang-chip:active{background:#d3e3fd;}
+
+/* =============================================================
+   ADMIN PORTAL STYLES
+============================================================= */
+.admin-tab{padding:8px 14px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:20px;font-size:12.5px;font-weight:700;color:var(--c-text-2);cursor:pointer;white-space:nowrap;transition:all .2s ease;}
+.admin-tab.active{background:var(--c-primary);border-color:var(--c-primary);color:#fff;}
+.admin-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh-sm);transition:box-shadow .2s ease;}
+.admin-card.pending{border-left:5px solid var(--c-warn);}
+.admin-card.verified{border-left:5px solid var(--c-safe);}
+.admin-card.rejected{border-left:5px solid var(--c-text-3);opacity:.85;}
+.btn-approve{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--c-safe);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;flex:1;}
+.btn-approve:active{background:#137333;}
+.btn-reject{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--c-bg);color:var(--c-crit);border:1px solid var(--c-crit-border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-reject:active{background:var(--c-crit-bg);}
+.badge-pending{background:var(--c-warn-bg);color:var(--c-warn);border:1px solid #ffe082;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
+.badge-verified{background:var(--c-safe-bg);color:var(--c-safe);border:1px solid var(--c-safe-border);padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
+.badge-rejected{background:var(--c-bg);color:var(--c-text-2);border:1px solid var(--c-border);padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
 </style>
 </head>
 <body>
@@ -670,6 +687,10 @@ svg{display:block;flex-shrink:0}
 
     <!-- Mobile FABs -->
     <div class="mobile-fabs">
+      <button class="fab" onclick="switchScreen('admin')" title="Admin Verification Portal" style="position:relative;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="mob-admin-count" style="position:absolute;top:-4px;right:-4px;background:var(--c-crit);color:#fff;font-size:10px;font-weight:800;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;border:2px solid #fff;">0</span>
+      </button>
       <button class="fab has-badge" onclick="switchScreen('alerts')" title="Alerts">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
@@ -825,6 +846,13 @@ svg{display:block;flex-shrink:0}
         </button>
       </div>
 
+      <!-- Admin Portal Button -->
+      <button onclick="switchScreen('admin')" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--c-primary-lt);border:1.5px solid var(--c-primary);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--c-primary-dk);width:100%;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Admin Verification Portal
+        <span id="desk-admin-count" style="background:var(--c-crit);color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:4px;display:none;">0</span>
+      </button>
+
       <!-- SOS -->
       <button class="sos-btn" onclick="openSOS()" style="width:100%;justify-content:center;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.07 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013 1.19h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L7.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16v.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -976,6 +1004,60 @@ svg{display:block;flex-shrink:0}
     </div>
   </div>
   <div class="alerts-scroll" id="alerts-list"></div>
+</div>
+
+<!-- ---- ADMIN PANEL SCREEN ---- -->
+<div class="screen" id="screen-admin">
+  <div class="inner-hdr" style="justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="back-btn" onclick="switchScreen('home')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div>
+        <div class="inner-hdr-title" style="display:flex;align-items:center;gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="color:var(--c-primary)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Admin Verification Portal
+        </div>
+        <div class="inner-hdr-sub">Verify field hazards before live alert broadcast</div>
+      </div>
+    </div>
+    <button onclick="loadAdminIncidents()" style="display:flex;align-items:center;gap:6px;background:var(--c-surface);border:1px solid var(--c-border);padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--c-text);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Admin Stats Ribbon -->
+  <div style="padding:12px 16px;background:var(--c-surface);border-bottom:1px solid var(--c-border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+    <div style="background:var(--c-warn-bg);border:1px solid #ffe082;border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;" onclick="switchAdminTab('Pending')">
+      <div style="font-size:11px;font-weight:700;color:var(--c-warn);text-transform:uppercase;">Pending Review</div>
+      <div id="stat-pending-count" style="font-size:18px;font-weight:800;color:var(--c-warn);margin-top:2px;">0</div>
+    </div>
+    <div style="background:var(--c-safe-bg);border:1px solid var(--c-safe-border);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;" onclick="switchAdminTab('Verified')">
+      <div style="font-size:11px;font-weight:700;color:var(--c-safe);text-transform:uppercase;">Live &amp; Verified</div>
+      <div id="stat-verified-count" style="font-size:18px;font-weight:800;color:var(--c-safe);margin-top:2px;">0</div>
+    </div>
+    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;" onclick="switchAdminTab('Rejected')">
+      <div style="font-size:11px;font-weight:700;color:var(--c-text-2);text-transform:uppercase;">Rejected</div>
+      <div id="stat-rejected-count" style="font-size:18px;font-weight:800;color:var(--c-text-2);margin-top:2px;">0</div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div style="display:flex;gap:6px;padding:10px 16px;background:var(--c-bg);border-bottom:1px solid var(--c-border);overflow-x:auto;">
+    <button class="admin-tab active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')">
+      Pending Verification (<span id="tab-cnt-Pending">0</span>)
+    </button>
+    <button class="admin-tab" id="tab-btn-Verified" onclick="switchAdminTab('Verified')">
+      Verified &amp; Live Alerts (<span id="tab-cnt-Verified">0</span>)
+    </button>
+    <button class="admin-tab" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')">
+      Rejected Reports (<span id="tab-cnt-Rejected">0</span>)
+    </button>
+  </div>
+
+  <!-- Admin Incidents Scrollable Body -->
+  <div class="scrollable-body" id="admin-incidents-list" style="padding:14px;gap:12px;"></div>
 </div>
 
 <!-- =============================================================
@@ -1274,6 +1356,8 @@ function switchScreen(name){
   if(name!=='home'){
     const el=document.getElementById('screen-'+name);
     if(el)el.classList.add('active');
+    if(name==='admin') loadAdminIncidents();
+    if(name==='alerts') loadBackendAlerts();
   }
 }
 
@@ -1496,12 +1580,8 @@ async function submitReport(){
     });
     if(r.ok){
       const data = await r.json();
-      showToast(`Incident saved! Matched to ${data.segment_id} — PostGIS updated!`);
-      // Immediately reload live segments and alerts from backend
-      setTimeout(() => {
-        addRiskPins();
-        loadBackendAlerts();
-      }, 300);
+      showToast(`Hazard reported! Awaiting Admin verification before going live.`);
+      updateAdminBadgeCount();
     } else {
       offlineQueue(payload);
     }
@@ -1555,6 +1635,225 @@ async function loadBackendAlerts(){
   }
 }
 loadBackendAlerts();
+
+/* =============================================================
+   ADMIN VERIFICATION PORTAL LOGIC
+============================================================= */
+let currentAdminTab = 'Pending';
+let allAdminIncidents = [];
+
+function svgBridge(){return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 18V9a1 1 0 011-1h4m13 10V9a1 1 0 00-1-1h-4M8 8V5M16 8V5M3 18h18M8 8h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';}
+function svgAccident(){return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM12 18v-6M12 10V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';}
+function svgTree(){return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M17 9V5l-5-3-5 3v4M3 9l9 5 9-5M12 14v7M9 21h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+function svgCheck(){return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+function svgX(){return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+function svgShield(){return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+
+function getHazardIcon(type){
+  const t = (type || '').toLowerCase();
+  if(t.includes('landslide')) return svgLandslide();
+  if(t.includes('flood') || t.includes('rain')) return svgFlood();
+  if(t.includes('bridge')) return svgBridge();
+  if(t.includes('accident')) return svgAccident();
+  if(t.includes('tree')) return svgTree();
+  return svgRoad();
+}
+
+function switchAdminTab(tab){
+  currentAdminTab = tab;
+  ['Pending', 'Verified', 'Rejected'].forEach(t => {
+    const btn = document.getElementById('tab-btn-' + t);
+    if(btn) {
+      if(t === tab) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+  renderAdminList();
+}
+
+async function updateAdminBadgeCount(){
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents?status=Pending');
+    if(!res.ok) return;
+    const data = await res.json();
+    const count = data.length;
+    const mb = document.getElementById('mob-admin-count');
+    const db = document.getElementById('desk-admin-count');
+    if(mb){
+      mb.textContent = count;
+      mb.style.display = count > 0 ? 'flex' : 'none';
+    }
+    if(db){
+      db.textContent = count;
+      db.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch(e) {
+    console.warn('Could not update admin badge:', e);
+  }
+}
+
+async function loadAdminIncidents(){
+  const listEl = document.getElementById('admin-incidents-list');
+  if(listEl && allAdminIncidents.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-text-3);">Loading hazard reports from PostGIS...</div>';
+  }
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents');
+    if(!res.ok) throw new Error('API error');
+    allAdminIncidents = await res.json();
+    
+    // Update counters
+    const pCnt = allAdminIncidents.filter(i => i.status === 'Pending').length;
+    const vCnt = allAdminIncidents.filter(i => i.status === 'Verified').length;
+    const rCnt = allAdminIncidents.filter(i => i.status === 'Rejected').length;
+
+    const sp = document.getElementById('stat-pending-count');
+    const sv = document.getElementById('stat-verified-count');
+    const sr = document.getElementById('stat-rejected-count');
+    if(sp) sp.textContent = pCnt;
+    if(sv) sv.textContent = vCnt;
+    if(sr) sr.textContent = rCnt;
+
+    const tp = document.getElementById('tab-cnt-Pending');
+    const tv = document.getElementById('tab-cnt-Verified');
+    const tr = document.getElementById('tab-cnt-Rejected');
+    if(tp) tp.textContent = pCnt;
+    if(tv) tv.textContent = vCnt;
+    if(tr) tr.textContent = rCnt;
+
+    updateAdminBadgeCount();
+    renderAdminList();
+  } catch(err) {
+    console.warn('Failed to load admin incidents:', err);
+    if(listEl) {
+      listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-crit);">Failed to connect to backend server. Make sure FastAPI is running.</div>';
+    }
+  }
+}
+
+function renderAdminList(){
+  const listEl = document.getElementById('admin-incidents-list');
+  if(!listEl) return;
+
+  const filtered = allAdminIncidents.filter(i => i.status === currentAdminTab);
+
+  if(!filtered.length){
+    const msg = currentAdminTab === 'Pending' 
+      ? 'All clear! No hazard reports currently pending administrator review.'
+      : currentAdminTab === 'Verified'
+      ? 'No active verified hazards.'
+      : 'No rejected hazard reports.';
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;background:var(--c-surface);border:1px dashed var(--c-border);border-radius:var(--r-md);color:var(--c-text-2);">
+        <div style="margin-bottom:10px;color:var(--c-safe);">${svgShield()}</div>
+        <div style="font-weight:700;font-size:14px;color:var(--c-text);margin-bottom:4px;">${msg}</div>
+        <div style="font-size:12px;color:var(--c-text-3);">Reports submitted by citizens and field teams will show up here for authorization.</div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(inc => {
+    const isPending = inc.status === 'Pending';
+    const isVerified = inc.status === 'Verified';
+    const isCrit = inc.severity === 'Critical';
+    const isHigh = inc.severity === 'High';
+    const sevColor = isCrit ? 'var(--c-crit)' : isHigh ? 'var(--c-high)' : 'var(--c-warn)';
+    const statusClass = inc.status.toLowerCase();
+    const timeStr = new Date(inc.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+
+    return `
+      <div class="admin-card ${statusClass}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:34px;height:34px;border-radius:10px;background:var(--c-bg);display:flex;align-items:center;justify-content:center;color:${sevColor};">
+              ${getHazardIcon(inc.incident_type)}
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--c-text);">${inc.incident_type}</div>
+              <div style="font-size:11px;color:var(--c-text-3);">ID: ${inc.incident_id} • ${timeStr}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:10.5px;font-weight:800;color:${sevColor};background:${sevColor}15;border:1px solid ${sevColor}40;padding:2px 7px;border-radius:8px;">
+              ${inc.severity.toUpperCase()}
+            </span>
+            <span class="badge-${statusClass}">
+              ${isPending ? 'PENDING REVIEW' : isVerified ? 'VERIFIED &amp; LIVE' : 'REJECTED'}
+            </span>
+          </div>
+        </div>
+
+        <div style="font-size:12.5px;background:var(--c-bg);padding:8px 10px;border-radius:8px;display:flex;flex-direction:column;gap:3px;">
+          <div><strong>Corridor:</strong> ${inc.segment_id || 'NH-6 Corridor'}</div>
+          <div><strong>GPS Location:</strong> ${inc.lat.toFixed(4)}° N, ${inc.lon.toFixed(4)}° E</div>
+          <div><strong>Reporter:</strong> ${inc.reporter || 'Field Reporter'}</div>
+        </div>
+
+        ${inc.notes ? `<div style="font-size:12.5px;color:var(--c-text-2);line-height:1.4;background:var(--c-surface);border-left:3px solid var(--c-border);padding:4px 8px;">"${inc.notes}"</div>` : ''}
+
+        ${isPending ? `
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn-approve" onclick="approveIncident('${inc.incident_id}')">
+              ${svgCheck()} Approve &amp; Broadcast Alert
+            </button>
+            <button class="btn-reject" onclick="rejectIncident('${inc.incident_id}')" title="Dismiss false alarm">
+              ${svgX()} Reject
+            </button>
+          </div>` : ''}
+
+        ${isVerified ? `
+          <div style="font-size:12px;font-weight:700;color:var(--c-safe);display:flex;align-items:center;gap:5px;background:var(--c-safe-bg);padding:6px 10px;border-radius:8px;">
+            ${svgCheck()} Live disaster alert published &amp; road segment updated in PostGIS
+          </div>` : ''}
+
+        ${inc.status === 'Rejected' ? `
+          <div style="font-size:12px;color:var(--c-text-3);display:flex;align-items:center;gap:5px;background:var(--c-bg);padding:6px 10px;border-radius:8px;">
+            ${svgX()} Report dismissed as false alarm (No public alert created)
+          </div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function approveIncident(id){
+  showToast('Verifying hazard and broadcasting alert...');
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents/' + id + '/approve', {
+      method: 'POST'
+    });
+    if(res.ok){
+      showToast('Hazard APPROVED! Public alert broadcasted & road risk updated.');
+      await loadAdminIncidents();
+      addRiskPins();
+      loadBackendAlerts();
+    } else {
+      showToast('Error approving hazard report.');
+    }
+  } catch(e) {
+    showToast('Failed to connect to backend.');
+  }
+}
+
+async function rejectIncident(id){
+  showToast('Rejecting hazard report...');
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents/' + id + '/reject', {
+      method: 'POST'
+    });
+    if(res.ok){
+      showToast('Hazard report marked as rejected.');
+      await loadAdminIncidents();
+    } else {
+      showToast('Error rejecting hazard report.');
+    }
+  } catch(e) {
+    showToast('Failed to connect to backend.');
+  }
+}
+
+// Initial badge check and polling
+updateAdminBadgeCount();
+setInterval(updateAdminBadgeCount, 20000);
+
 
 /* ---- SOS ---- */
 function openSOS(){document.getElementById('sos-modal').classList.add('open');}

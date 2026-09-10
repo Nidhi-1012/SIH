@@ -134,14 +134,17 @@ async def get_segment_risk_assessment(segment_id: str, db: Session = Depends(get
     risk_data = calculate_segment_risk(segment, weather.get("rainfall_24h", 0.0), incidents)
     return risk_data
 
-# 2. Incident Reporting API (PRD §6.6 Field Reports)
+# 2. Incident Reporting API & Admin Verification Workflow (PRD §6.6 Field Reports)
 @app.post("/api/v1/incidents", response_model=IncidentResponse)
 def create_incident_report(inc: IncidentCreate, db: Session = Depends(get_db)):
+    """
+    Submits a new hazard report. Stored with status='Pending' for Admin review.
+    Road segments are not altered and public alerts are not triggered until approved.
+    """
     # Auto-match to nearest road segment if not explicitly provided
     segment_id = inc.segment_id
     if not segment_id:
         all_segs = db.query(RoadSegment).all()
-        # Find closest segment by simple Euclidean distance
         closest = min(
             all_segs, 
             key=lambda s: ((s.start_lat - inc.lat)**2 + (s.start_lon - inc.lon)**2)
@@ -158,37 +161,74 @@ def create_incident_report(inc: IncidentCreate, db: Session = Depends(get_db)):
         lon=inc.lon,
         photo_url=inc.photo_url,
         notes=inc.notes,
-        reporter=inc.reporter or "Field Officer",
-        status="Verified"
+        reporter=inc.reporter or "Citizen / Field Reporter",
+        status="Pending"  # Stored as Pending for Admin Approval
     )
     db.add(db_inc)
-    
-    # State Machine Update on Road Segment
-    segment = db.query(RoadSegment).filter(RoadSegment.segment_id == segment_id).first()
-    if segment:
-        if inc.severity in ["Critical", "High"] or inc.incident_type in ["Landslide", "Bridge Damage"]:
-            segment.status = "Blocked" if inc.severity == "Critical" else "Caution"
-            segment.risk_score = min(segment.risk_score + 40.0, 95.0)
-            segment.last_updated = datetime.datetime.utcnow()
-
-        # Trigger Automated Alert
-        db.add(Alert(
-            alert_id=f"ALT-{uuid.uuid4().hex[:6].upper()}",
-            title=f"Field Incident: {inc.incident_type} reported",
-            message=f"{inc.severity} severity incident reported on {segment.road_name} ({segment.district}). Rerouting active shipments.",
-            severity="Critical" if inc.severity == "Critical" else "Urgent",
-            category="Road Blocked",
-            segment_id=segment_id,
-            acknowledged=False
-        ))
-
     db.commit()
     db.refresh(db_inc)
     return db_inc
 
 @app.get("/api/v1/incidents", response_model=List[IncidentResponse])
-def get_incidents(db: Session = Depends(get_db)):
-    return db.query(IncidentReport).order_by(IncidentReport.timestamp.desc()).all()
+def get_incidents(status: Optional[str] = Query(None, description="Filter by status: Pending, Verified, Rejected"), db: Session = Depends(get_db)):
+    query = db.query(IncidentReport)
+    if status:
+        query = query.filter(IncidentReport.status == status)
+    return query.order_by(IncidentReport.timestamp.desc()).all()
+
+@app.post("/api/v1/incidents/{incident_id}/approve", response_model=IncidentResponse)
+def approve_incident_report(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Admin approval endpoint: marks hazard as Verified, updates road segment state,
+    and publishes the alert to the live public feed & map.
+    """
+    incident = db.query(IncidentReport).filter(IncidentReport.incident_id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident report not found")
+    
+    incident.status = "Verified"
+
+    # State Machine & Risk Score Update on Road Segment
+    segment = db.query(RoadSegment).filter(RoadSegment.segment_id == incident.segment_id).first()
+    if segment:
+        is_severe = incident.severity in ["Critical", "High"] or incident.incident_type in ["Landslide", "Bridge Damage"]
+        if incident.severity == "Critical":
+            segment.status = "Blocked"
+            segment.risk_score = min(segment.risk_score + 40.0, 98.0)
+        elif is_severe:
+            segment.status = "Caution"
+            segment.risk_score = min(segment.risk_score + 25.0, 90.0)
+        segment.last_updated = datetime.datetime.utcnow()
+
+        # Trigger Official Live Broadcast Alert
+        db.add(Alert(
+            alert_id=f"ALT-{uuid.uuid4().hex[:6].upper()}",
+            title=f"Verified {incident.incident_type} on {segment.road_name}",
+            message=f"{incident.severity} severity hazard verified by Admin on {segment.road_name} ({segment.district}). {incident.notes or 'Proceed with extreme caution or seek alternate routes.'}",
+            severity="Critical" if incident.severity == "Critical" else "Urgent",
+            category="Road Blocked" if segment.status == "Blocked" else "Hazard Verified",
+            segment_id=segment.segment_id,
+            acknowledged=False
+        ))
+
+    db.commit()
+    db.refresh(incident)
+    return incident
+
+@app.post("/api/v1/incidents/{incident_id}/reject", response_model=IncidentResponse)
+def reject_incident_report(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Admin rejection endpoint: marks report as Rejected (false alarm / spam).
+    No road changes or public alerts are created.
+    """
+    incident = db.query(IncidentReport).filter(IncidentReport.incident_id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident report not found")
+    
+    incident.status = "Rejected"
+    db.commit()
+    db.refresh(incident)
+    return incident
 
 # 3. Weather Ingestion API
 @app.get("/api/v1/weather/{district}", response_model=WeatherResponse)
