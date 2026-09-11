@@ -1329,6 +1329,7 @@ async function loadLiveCorridors() {
 
 /* ---- REAL ROUTE SEARCH & INLINE DISPLAY ---- */
 async function findRoutes() {
+  const originInput = document.getElementById('desk-origin').value.trim() || '';
   const destInput = document.getElementById('desk-dest').value.trim() || document.getElementById('mob-dest').value.trim();
   if (!destInput) {
     showToast('Please type or select a destination');
@@ -1344,7 +1345,7 @@ async function findRoutes() {
     const res = await fetch('/api/v1/route', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ origin: 'Guwahati', destination: destInput, priority_class: 'P2' })
+      body: JSON.stringify({ origin: originInput || 'Guwahati', destination: destInput, priority_class: 'P2' })
     }).catch(() => null);
 
     if (res && res.ok) {
@@ -1433,7 +1434,7 @@ function renderInlineRoutes(routes, destName) {
   if (sorted[0].pts && homeMap) {
     if (routeLine) homeMap.removeLayer(routeLine);
     routeLine = L.polyline(sorted[0].pts, { color: '#0071e3', weight: 6, opacity: 0.85, lineCap: 'round' }).addTo(homeMap);
-    homeMap.fitBounds(routeLine.getBounds(), { padding: [70, 70] });
+    homeMap.fitBounds(routeLine.getBounds(), { padding: [60, 60], maxZoom: 11 });
   }
 }
 
