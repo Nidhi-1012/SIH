@@ -720,6 +720,7 @@ svg { display: block; flex-shrink: 0; }
 }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -926,7 +927,7 @@ svg { display: block; flex-shrink: 0; }
     </div>
 
     
-    <!-- ADMIN VERIFICATION PORTAL SCREEN -->
+        <!-- ADMIN VERIFICATION PORTAL SCREEN (SUPABASE AUTH GATE) -->
     <div class="screen" id="screen-admin">
       <div class="inner-hdr">
         <button class="back-btn" onclick="switchScreen('home')">
@@ -934,43 +935,85 @@ svg { display: block; flex-shrink: 0; }
         </button>
         <div style="flex:1;">
           <div class="inner-hdr-title">Admin Verification Portal</div>
-          <div class="inner-hdr-sub">Review Field Reports, Snapped Segments & Authorize Broadcasts</div>
+          <div class="inner-hdr-sub" id="admin-header-subtitle">Authorize Citizen Hazard Reports & Broadcast Live Alerts</div>
         </div>
-        <button class="lang-toggle-btn" onclick="loadAdminIncidents()" style="display:flex;align-items:center;gap:6px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-          <span>Refresh</span>
-        </button>
-      </div>
-
-      <!-- TABS (APPLE SEGMENTED CONTROL) -->
-      <div style="max-width:720px;width:100%;margin:16px auto 0;padding:0 20px;">
-        <div style="background:rgba(0,0,0,0.06);padding:3px;border-radius:10px;display:flex;gap:4px;">
-          <button class="admin-tab-btn active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--c-text);">
-            Pending Review <span id="tab-cnt-Pending" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(255,159,10,0.15);color:var(--c-warn);font-size:11px;">0</span>
-          </button>
-          <button class="admin-tab-btn" id="tab-btn-Verified" onclick="switchAdminTab('Verified')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
-            Verified &amp; Live <span id="tab-cnt-Verified" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
-          </button>
-          <button class="admin-tab-btn" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
-            Rejected <span id="tab-cnt-Rejected" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+        <!-- Right status / user info -->
+        <div id="admin-user-nav-box" style="display:none;align-items:center;gap:8px;">
+          <span class="live-pill" style="font-size:11.5px;padding:3px 10px;" id="admin-user-pill">
+            <span class="live-dot"></span>
+            <span id="admin-user-email">admin</span>
+          </span>
+          <button class="lang-toggle-btn" onclick="handleAdminSignOut()" style="font-size:11.5px;color:var(--c-crit);">Sign Out</button>
+          <button class="lang-toggle-btn" onclick="loadAdminIncidents()" title="Refresh Queue">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
           </button>
         </div>
       </div>
 
-      <div class="scrollable-body" id="admin-incidents-list" style="max-width:720px;padding-top:14px;"></div>
+      <!-- GATE 1: AUTHENTICATION LOGIN / SIGNUP BOX (WHEN NOT SIGNED IN) -->
+      <div id="admin-auth-gate" style="display:none;max-width:420px;width:100%;margin:40px auto;padding:0 20px;">
+        <div style="background:#ffffff;border:1px solid var(--c-border);border-radius:var(--r-lg);padding:24px;box-shadow:var(--shadow-lg);">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--c-primary-soft);color:var(--c-primary);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:16px;font-weight:600;color:var(--c-text);">Administrator Access</div>
+            <div style="font-size:12px;color:var(--c-text-2);margin-top:4px;line-height:1.4;">
+              Only registered highway officials can approve road hazards and trigger live public broadcasts.
+            </div>
+          </div>
+
+          <!-- Tab: Sign In vs Register -->
+          <div style="display:flex;background:var(--c-bg);padding:3px;border-radius:8px;margin-bottom:16px;">
+            <button id="auth-tab-signin" onclick="switchAuthTab('signin')" style="flex:1;padding:6px;border-radius:6px;font-size:12px;font-weight:600;background:#fff;color:var(--c-text);box-shadow:0 1px 2px rgba(0,0,0,0.06);">Sign In</button>
+            <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:6px;border-radius:6px;font-size:12px;font-weight:600;background:transparent;color:var(--c-text-2);">Register Admin</button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="input-group">
+              <input id="admin-auth-email" type="email" placeholder="Official Email (e.g. officer@nhai.gov.in)" style="font-size:13px;"/>
+            </div>
+            <div class="input-group">
+              <input id="admin-auth-password" type="password" placeholder="Password (min 6 characters)" style="font-size:13px;" onkeydown="if(event.key==='Enter')handleAdminAuth()"/>
+            </div>
+            <div id="auth-extra-fields" style="display:none;flex-direction:column;gap:10px;">
+              <div class="input-group">
+                <input id="admin-auth-org" type="text" placeholder="Designation / Agency (e.g. SDRF Meghalaya)" style="font-size:13px;"/>
+              </div>
+            </div>
+
+            <button class="btn-analyze-route" style="margin-top:6px;" onclick="handleAdminAuth()" id="btn-auth-submit">
+              Sign In to Admin Portal
+            </button>
+          </div>
+
+          <div id="admin-auth-error" style="display:none;font-size:12px;color:var(--c-crit);background:var(--c-crit-soft);padding:8px 12px;border-radius:8px;margin-top:12px;text-align:center;"></div>
+        </div>
+      </div>
+
+      <!-- GATE 2: AUTHORIZED INCIDENT QUEUE (WHEN SIGNED IN) -->
+      <div id="admin-panel-content" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <!-- TABS (APPLE SEGMENTED CONTROL) -->
+        <div style="max-width:720px;width:100%;margin:16px auto 0;padding:0 20px;flex-shrink:0;">
+          <div style="background:rgba(0,0,0,0.06);padding:3px;border-radius:10px;display:flex;gap:4px;">
+            <button class="admin-tab-btn active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--c-text);">
+              Pending Review <span id="tab-cnt-Pending" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(255,159,10,0.15);color:var(--c-warn);font-size:11px;">0</span>
+            </button>
+            <button class="admin-tab-btn" id="tab-btn-Verified" onclick="switchAdminTab('Verified')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+              Verified &amp; Live <span id="tab-cnt-Verified" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+            </button>
+            <button class="admin-tab-btn" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+              Rejected <span id="tab-cnt-Rejected" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="scrollable-body" id="admin-incidents-list" style="max-width:720px;padding-top:14px;"></div>
+      </div>
     </div>
-
-    <!-- REPORT HAZARD SCREEN -->
-    <div class="screen" id="screen-report">
-      <div class="inner-hdr">
-        <button class="back-btn" onclick="switchScreen('home')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <div>
-          <div class="inner-hdr-title">Report Road Hazard</div>
-          <div class="inner-hdr-sub">Instant GPS Snapping to Highway Segment</div>
-        </div>
-      </div>
       <div class="scrollable-body">
         <div class="card-title">Select Hazard Type</div>
         <div class="hazard-grid">
@@ -1396,6 +1439,352 @@ function endNav() {
     navRoutingControl = null;
   }
   switchScreen('home');
+}
+
+
+/* =============================================================
+   SUPABASE CLIENT & ADMIN AUTHORIZATION GATEKEEPER
+============================================================= */
+const SUPABASE_PROJECT_URL = "https://xtdrczsmgvjsyoeqmwvk.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZHJjenNtZ3Zqc3lvZXFtd3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkwNjIsImV4cCI6MjEwNDY1NTA2Mn0.W235P2PkflTcUbcxhJaoz8JehpirwclHEAFR0m9De8I";
+let supabaseClient = null;
+let currentAdminSession = null;
+let currentAdminTab = 'Pending';
+let allAdminIncidents = [];
+let authMode = 'signin'; // 'signin' or 'signup'
+
+try {
+  if (window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  console.warn("Supabase init error:", e);
+}
+
+// Check session on startup and update UI
+async function checkAdminSession() {
+  if (!supabaseClient) return null;
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    currentAdminSession = data ? data.session : null;
+    updateAdminAuthUI();
+    return currentAdminSession;
+  } catch (e) {
+    return null;
+  }
+}
+
+function updateAdminAuthUI() {
+  const gateEl = document.getElementById('admin-auth-gate');
+  const panelEl = document.getElementById('admin-panel-content');
+  const userNavEl = document.getElementById('admin-user-nav-box');
+  const userEmailEl = document.getElementById('admin-user-email');
+
+  if (currentAdminSession && currentAdminSession.user) {
+    if (gateEl) gateEl.style.display = 'none';
+    if (panelEl) panelEl.style.display = 'flex';
+    if (userNavEl) userNavEl.style.display = 'flex';
+    if (userEmailEl) userEmailEl.textContent = currentAdminSession.user.email || 'Admin';
+  } else {
+    if (gateEl) gateEl.style.display = 'block';
+    if (panelEl) panelEl.style.display = 'none';
+    if (userNavEl) userNavEl.style.display = 'none';
+  }
+}
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  const btnIn = document.getElementById('auth-tab-signin');
+  const btnUp = document.getElementById('auth-tab-signup');
+  const extraFields = document.getElementById('auth-extra-fields');
+  const btnSubmit = document.getElementById('btn-auth-submit');
+  const errEl = document.getElementById('admin-auth-error');
+  if (errEl) errEl.style.display = 'none';
+
+  if (mode === 'signup') {
+    btnUp.style.background = '#fff';
+    btnUp.style.color = 'var(--c-text)';
+    btnUp.style.boxShadow = '0 1px 2px rgba(0,0,0,0.06)';
+    btnIn.style.background = 'transparent';
+    btnIn.style.color = 'var(--c-text-2)';
+    btnIn.style.boxShadow = 'none';
+    extraFields.style.display = 'flex';
+    btnSubmit.textContent = 'Register Authorized Admin';
+  } else {
+    btnIn.style.background = '#fff';
+    btnIn.style.color = 'var(--c-text)';
+    btnIn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.06)';
+    btnUp.style.background = 'transparent';
+    btnUp.style.color = 'var(--c-text-2)';
+    btnUp.style.boxShadow = 'none';
+    extraFields.style.display = 'none';
+    btnSubmit.textContent = 'Sign In to Admin Portal';
+  }
+}
+
+async function handleAdminAuth() {
+  const email = document.getElementById('admin-auth-email').value.trim();
+  const password = document.getElementById('admin-auth-password').value.trim();
+  const errEl = document.getElementById('admin-auth-error');
+  const btnSubmit = document.getElementById('btn-auth-submit');
+
+  if (!email || !password) {
+    errEl.textContent = 'Please enter both email and password.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+  btnSubmit.textContent = 'Verifying credentials...';
+  btnSubmit.disabled = true;
+
+  try {
+    if (authMode === 'signup') {
+      const org = document.getElementById('admin-auth-org').value.trim() || 'Highway Authority';
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { organization: org } }
+      });
+      if (error) throw error;
+      if (data.session) {
+        currentAdminSession = data.session;
+        showToast('Admin registered and logged in successfully!');
+        updateAdminAuthUI();
+        loadAdminIncidents();
+      } else {
+        showToast('Registration successful! You can now sign in.');
+        switchAuthTab('signin');
+      }
+    } else {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+      if (error) throw error;
+      currentAdminSession = data.session;
+      showToast(`Welcome back, ${data.user.email}!`);
+      updateAdminAuthUI();
+      loadAdminIncidents();
+    }
+  } catch (err) {
+    errEl.textContent = err.message || 'Authentication failed. Please check credentials.';
+    errEl.style.display = 'block';
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = authMode === 'signup' ? 'Register Authorized Admin' : 'Sign In to Admin Portal';
+  }
+}
+
+async function handleAdminSignOut() {
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut();
+  }
+  currentAdminSession = null;
+  updateAdminAuthUI();
+  showToast('Signed out of Administrator Portal.');
+}
+
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+  ['Pending', 'Verified', 'Rejected'].forEach(t => {
+    const btn = document.getElementById('tab-btn-' + t);
+    if (btn) {
+      if (t === tab) {
+        btn.style.background = '#ffffff';
+        btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        btn.style.color = 'var(--c-text)';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.boxShadow = 'none';
+        btn.style.color = 'var(--c-text-2)';
+      }
+    }
+  });
+  renderAdminList();
+}
+
+async function updateAdminBadgeCount() {
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents?status=Pending');
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = Array.isArray(data) ? data.filter(i => i.status === 'Pending').length : 0;
+    const sb = document.getElementById('sidebar-admin-badge');
+    if (sb) {
+      sb.textContent = count;
+      sb.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch (e) {}
+}
+
+async function loadAdminIncidents() {
+  await checkAdminSession();
+  if (!currentAdminSession) {
+    updateAdminAuthUI();
+    return;
+  }
+
+  const listEl = document.getElementById('admin-incidents-list');
+  if (listEl && allAdminIncidents.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-text-2);">Loading verified incident queue...</div>';
+  }
+
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents');
+    if (!res.ok) throw new Error('API error');
+    allAdminIncidents = await res.json();
+
+    const pCnt = allAdminIncidents.filter(i => i.status === 'Pending').length;
+    const vCnt = allAdminIncidents.filter(i => i.status === 'Verified').length;
+    const rCnt = allAdminIncidents.filter(i => i.status === 'Rejected').length;
+
+    const tp = document.getElementById('tab-cnt-Pending');
+    const tv = document.getElementById('tab-cnt-Verified');
+    const tr = document.getElementById('tab-cnt-Rejected');
+    if (tp) tp.textContent = pCnt;
+    if (tv) tv.textContent = vCnt;
+    if (tr) tr.textContent = rCnt;
+
+    updateAdminBadgeCount();
+    renderAdminList();
+  } catch (err) {
+    console.warn('Failed to load admin incidents:', err);
+    if (listEl) {
+      listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-crit);">Unable to load incidents from backend API.</div>';
+    }
+  }
+}
+
+function renderAdminList() {
+  const listEl = document.getElementById('admin-incidents-list');
+  if (!listEl) return;
+
+  const filtered = allAdminIncidents.filter(i => (i.status || 'Pending') === currentAdminTab);
+
+  if (!filtered.length) {
+    const msg = currentAdminTab === 'Pending' 
+      ? 'No hazard reports currently pending administrator authorization.'
+      : (currentAdminTab === 'Verified' ? 'No active verified hazards recorded.' : 'No rejected reports.');
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;background:#ffffff;border:1px dashed var(--c-border);border-radius:var(--r-md);color:var(--c-text-2);margin-top:10px;">
+        <div style="font-weight:600;font-size:14px;color:var(--c-text);margin-bottom:4px;">${msg}</div>
+        <div style="font-size:12px;color:var(--c-text-3);">Citizen reports appear here in Pending status and require your authorization to go live.</div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(inc => {
+    const isPending = inc.status === 'Pending';
+    const isVerified = inc.status === 'Verified';
+    const sev = (inc.severity || 'High').toLowerCase();
+    const sevColor = sev === 'critical' ? 'var(--c-crit)' : (sev === 'high' ? 'var(--c-warn)' : 'var(--c-safe)');
+    const sevBg = sev === 'critical' ? 'var(--c-crit-soft)' : (sev === 'high' ? 'var(--c-warn-soft)' : 'var(--c-safe-soft)');
+    const timeStr = inc.timestamp ? new Date(inc.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Recent';
+
+    return `
+      <div style="background:#ffffff;border:1px solid var(--c-border);border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:10px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--c-text);display:flex;align-items:center;gap:8px;">
+              <span>${inc.incident_type || 'Road Hazard'}</span>
+              <span style="font-size:10.5px;font-weight:600;color:${sevColor};background:${sevBg};padding:2px 7px;border-radius:var(--r-pill);">${(inc.severity || 'HIGH').toUpperCase()}</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--c-text-3);margin-top:2px;">ID: ${inc.incident_id || inc.id} · ${timeStr}</div>
+          </div>
+          <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:var(--r-pill);background:${isPending ? 'rgba(255,159,10,0.12)' : (isVerified ? 'var(--c-safe-soft)' : 'rgba(0,0,0,0.06)')};color:${isPending ? 'var(--c-warn)' : (isVerified ? 'var(--c-safe)' : 'var(--c-text-2)')};">
+            ${isPending ? 'Pending Admin Authorization' : (isVerified ? 'Verified & Broadcasting Live' : 'Rejected')}
+          </span>
+        </div>
+
+        <div style="font-size:13px;color:var(--c-text);background:var(--c-bg);padding:10px 12px;border-radius:8px;line-height:1.4;">
+          ${inc.description || inc.notes || 'Citizen field report with GPS fix.'}
+        </div>
+
+        <div style="font-size:11.5px;color:var(--c-text-2);display:flex;gap:12px;flex-wrap:wrap;">
+          <span><b>Highway Segment:</b> ${inc.segment_id || 'NH-6 Corridor'}</span>
+          <span><b>Coordinates:</b> ${inc.latitude ? Number(inc.latitude).toFixed(4) : '26.1445'}° N, ${inc.longitude ? Number(inc.longitude).toFixed(4) : '91.7362'}° E</span>
+        </div>
+
+        ${isPending ? `
+          <div style="display:flex;gap:10px;margin-top:4px;border-top:1px solid var(--c-border);padding-top:10px;">
+            <button onclick="approveIncident('${inc.incident_id || inc.id}')" style="flex:1;padding:9px;background:var(--c-safe);color:#fff;border-radius:8px;font-size:12.5px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(52,199,89,0.25);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Approve &amp; Broadcast Live Alert</span>
+            </button>
+            <button onclick="rejectIncident('${inc.incident_id || inc.id}')" style="padding:9px 16px;background:rgba(0,0,0,0.05);color:var(--c-crit);border-radius:8px;font-size:12.5px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Dismiss</span>
+            </button>
+          </div>
+        ` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function approveIncident(id) {
+  if (!currentAdminSession || !currentAdminSession.access_token) {
+    showToast('Administrator session required. Please sign in.');
+    updateAdminAuthUI();
+    return;
+  }
+
+  showToast('Authenticating with Supabase & broadcasting alert...');
+  try {
+    const res = await fetch(`http://127.0.0.1:8000/api/v1/incidents/${id}/approve`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + currentAdminSession.access_token
+      }
+    });
+
+    if (res.ok) {
+      showToast('Hazard approved! Road risk updated and public alert broadcast live.');
+      await loadAdminIncidents();
+      loadLiveCorridors();
+    } else if (res.status === 401) {
+      showToast('Unauthorized: Only registered administrators can approve.');
+      await handleAdminSignOut();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.detail || 'Failed to approve hazard.');
+    }
+  } catch (e) {
+    showToast('Connection error connecting to backend.');
+  }
+}
+
+async function rejectIncident(id) {
+  if (!currentAdminSession || !currentAdminSession.access_token) {
+    showToast('Administrator session required. Please sign in.');
+    updateAdminAuthUI();
+    return;
+  }
+
+  showToast('Dismissing hazard report...');
+  try {
+    const res = await fetch(`http://127.0.0.1:8000/api/v1/incidents/${id}/reject`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + currentAdminSession.access_token
+      }
+    });
+
+    if (res.ok) {
+      showToast('Report dismissed.');
+      await loadAdminIncidents();
+    } else if (res.status === 401) {
+      showToast('Unauthorized: Administrator authentication required.');
+      await handleAdminSignOut();
+    }
+  } catch (e) {
+    showToast('Connection error connecting to backend.');
+  }
 }
 
 /* ---- SCREEN SWITCHER ---- */

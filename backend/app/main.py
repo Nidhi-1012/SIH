@@ -1,8 +1,10 @@
+import httpx
+import logging
 import os
 import json
 import uuid
 import datetime
-from fastapi import FastAPI, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, Query, Header, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -134,6 +136,49 @@ async def get_segment_risk_assessment(segment_id: str, db: Session = Depends(get
     risk_data = calculate_segment_risk(segment, weather.get("rainfall_24h", 0.0), incidents)
     return risk_data
 
+
+logger = logging.getLogger("admin_auth")
+
+SUPABASE_URL = "https://xtdrczsmgvjsyoeqmwvk.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZHJjenNtZ3Zqc3lvZXFtd3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkwNjIsImV4cCI6MjEwNDY1NTA2Mn0.W235P2PkflTcUbcxhJaoz8JehpirwclHEAFR0m9De8I"
+
+async def verify_admin_user(authorization: Optional[str] = Header(None)) -> dict:
+    """
+    Gatekeeper: Verifies incoming request has a valid Supabase JWT Bearer token
+    issued to an authorized administrator.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401, 
+            detail="Unauthorized: Registered Administrator session required to authorize or dismiss hazard reports."
+        )
+    
+    token = authorization.split(" ")[1]
+    url = f"{SUPABASE_URL}/auth/v1/user"
+    
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            res = await client.get(
+                url, 
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "apikey": SUPABASE_ANON_KEY
+                }
+            )
+            if res.status_code != 200:
+                raise HTTPException(
+                    status_code=401, 
+                    detail="Invalid or expired Administrator credentials. Please sign in to the Admin Portal."
+                )
+            user_data = res.json()
+            logger.info(f"Verified Admin action by: {user_data.get('email')}")
+            return user_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Supabase auth check error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication verification service offline.")
+
 # 2. Incident Reporting API & Admin Verification Workflow (PRD §6.6 Field Reports)
 @app.post("/api/v1/incidents", response_model=IncidentResponse)
 def create_incident_report(inc: IncidentCreate, db: Session = Depends(get_db)):
@@ -177,7 +222,7 @@ def get_incidents(status: Optional[str] = Query(None, description="Filter by sta
     return query.order_by(IncidentReport.timestamp.desc()).all()
 
 @app.post("/api/v1/incidents/{incident_id}/approve", response_model=IncidentResponse)
-def approve_incident_report(incident_id: str, db: Session = Depends(get_db)):
+async def approve_incident_report(incident_id: str, admin_user: dict = Depends(verify_admin_user), db: Session = Depends(get_db)):
     """
     Admin approval endpoint: marks hazard as Verified, updates road segment state,
     and publishes the alert to the live public feed & map.
@@ -216,7 +261,7 @@ def approve_incident_report(incident_id: str, db: Session = Depends(get_db)):
     return incident
 
 @app.post("/api/v1/incidents/{incident_id}/reject", response_model=IncidentResponse)
-def reject_incident_report(incident_id: str, db: Session = Depends(get_db)):
+async def reject_incident_report(incident_id: str, admin_user: dict = Depends(verify_admin_user), db: Session = Depends(get_db)):
     """
     Admin rejection endpoint: marks report as Rejected (false alarm / spam).
     No road changes or public alerts are created.
