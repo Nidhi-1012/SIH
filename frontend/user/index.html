@@ -2063,6 +2063,7 @@ function switchScreen(screenName) {
     setTimeout(detectReportLocation, 200);
   } else if (screenName === 'admin') {
     document.getElementById('screen-admin').classList.add('active');
+    const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='none';
     loadAdminIncidents();
     startAdminPoll();
   } else if (screenName === 'nav') {
