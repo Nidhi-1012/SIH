@@ -2225,6 +2225,11 @@ window.addEventListener('DOMContentLoaded', () => {
   initHomeMap();
   fetchLiveWeather();
   loadLiveCorridors();
+  
+  if (window.location.hash === '#admin') {
+    switchScreen('admin');
+  }
+
   updateAdminBadgeCount();
   setInterval(updateAdminBadgeCount, 25000);
   // Live weather auto-poll every 60s
