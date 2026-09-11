@@ -10,3 +10,7 @@ python-dotenv
 httpx
 pytest
 pytest-asyncio
+scikit-learn
+joblib
+pandas
+numpy

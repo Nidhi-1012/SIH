@@ -1,0 +1,9 @@
+[
+  "rainfall_1h",
+  "rainfall_6h",
+  "rainfall_24h",
+  "forecast_24h_rain",
+  "landslide_susceptibility",
+  "base_risk_score",
+  "historical_incident_count"
+]
