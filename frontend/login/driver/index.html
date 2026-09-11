@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Driver Login - NER SafeRoute</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --c-primary: #34c759; --c-bg: #f5f5f7; --c-text: #1d1d1f; --c-text-2: #86868b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+  body { background: var(--c-bg); color: var(--c-text); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px 20px; }
+
+  .back-btn { position: fixed; top: 16px; left: 16px; background: #fff; border: none; padding: 10px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600; color: #1d1d1f; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 6px; text-decoration: none; }
+
+  .icon-box { width: 72px; height: 72px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 16px; border: 1.5px solid rgba(52,199,89,0.33); background: rgba(52,199,89,0.08); }
+
+  h1 { font-size: 26px; font-weight: 800; color: var(--c-text); margin-bottom: 4px; letter-spacing: -0.4px; }
+  .subtitle { font-size: 13px; color: var(--c-text-2); font-weight: 500; margin-bottom: 6px; }
+  .desc { font-size: 13.5px; color: #444; text-align: center; max-width: 300px; line-height: 1.5; margin-bottom: 32px; }
+
+  .login-card { width: 100%; max-width: 380px; background: #fff; border-radius: 18px; padding: 28px 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.06); }
+
+  .input-group { margin-bottom: 16px; }
+  .input-group label { font-size: 12px; font-weight: 600; color: var(--c-text-2); display: block; margin-bottom: 6px; letter-spacing: 0.3px; }
+  .input-group input { width: 100%; padding: 13px 14px; font-size: 15px; border: 1.5px solid rgba(0,0,0,0.1); border-radius: 10px; background: var(--c-bg); color: var(--c-text); outline: none; transition: border-color 0.15s; }
+  .input-group input:focus { border-color: var(--c-primary); }
+
+  .btn { width: 100%; padding: 15px; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; margin-top: 8px; text-align: center; transition: opacity 0.15s; }
+  .btn:active { opacity: 0.85; }
+  .btn-primary { background: var(--c-primary); color: #fff; box-shadow: 0 4px 16px rgba(52,199,89,0.35); }
+  .btn-outline { background: #fff; color: var(--c-primary); border: 2px solid var(--c-primary); margin-top: 12px; }
+  .btn-guest { background: transparent; color: var(--c-text-2); font-size: 14px; font-weight: 600; text-decoration: underline; margin-top: 16px; }
+
+  .error-msg { color: #ff3b30; font-size: 13px; font-weight: 500; text-align: center; margin-bottom: 12px; display: none; padding: 10px; background: rgba(255,59,48,0.06); border-radius: 8px; }
+  .loading { opacity: 0.6; pointer-events: none; }
+</style>
+</head>
+<body>
+
+  <a href="/" class="back-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    Back
+  </a>
+
+  <div class="icon-box">🚚</div>
+  <h1>Driver Login</h1>
+  <p class="subtitle">Transport Operators</p>
+  <p class="desc">Access logistics routes, safe delivery paths, and real-time road hazard updates.</p>
+
+  <div class="login-card">
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="input-group">
+      <label>DRIVER EMAIL</label>
+      <input type="email" id="email" placeholder="Enter your email" autocomplete="email">
+    </div>
+    <div class="input-group" style="margin-bottom: 24px;">
+      <label>PASSWORD</label>
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-primary" id="btn-login" onclick="handleAuth('login')">LOGIN</button>
+    <button class="btn btn-outline" id="btn-signup" onclick="handleAuth('signup')">CREATE DRIVER ACCOUNT</button>
+    <button class="btn btn-guest" onclick="window.location.href='/driver/'">Continue as Guest</button>
+  </div>
+
+  <p style="margin-top: 28px; font-size: 11.5px; color: #98989d; text-align: center; line-height: 1.6;">
+    NER SafeRoute · Government of India · SIH26002
+  </p>
+
+  <script>
+    const SUPABASE_PROJECT_URL = "https://xtdrczsmgvjsyoeqmwvk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZHJjenNtZ3Zqc3lvZXFtd3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkwNjIsImV4cCI6MjEwNDY1NTA2Mn0.W235P2PkflTcUbcxhJaoz8JehpirwclHEAFR0m9De8I";
+    const supabase = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+
+    async function handleAuth(mode) {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('error-msg');
+      errorEl.style.display = 'none';
+
+      if (!email || !password) {
+        errorEl.textContent = 'Please enter your email and password.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errorEl.textContent = 'Password must be at least 6 characters.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Disable buttons while loading
+      document.getElementById('btn-login').classList.add('loading');
+      document.getElementById('btn-signup').classList.add('loading');
+
+      let res;
+      if (mode === 'login') {
+        res = await supabase.auth.signInWithPassword({ email, password });
+      } else {
+        res = await supabase.auth.signUp({ email, password });
+      }
+
+      document.getElementById('btn-login').classList.remove('loading');
+      document.getElementById('btn-signup').classList.remove('loading');
+
+      if (res.error) {
+        errorEl.textContent = res.error.message;
+        errorEl.style.display = 'block';
+      } else {
+        // Successful auth → go to driver dashboard (NER SafeRoute user app)
+        window.location.href = '/driver/';
+      }
+    }
+
+    // Allow Enter key to submit
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleAuth('login');
+    });
+  </script>
+
+</body>
+</html>
