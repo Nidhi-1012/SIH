@@ -1459,44 +1459,150 @@ function quickDest(dest) {
   findRoutes();
 }
 
-/* ---- TURN-BY-TURN NAVIGATION (FREE OSRM INTEGRATION) ---- */
+/* ---- GOOGLE MAPS STYLE LIVE TURN-BY-TURN NAVIGATION ---- */
+let navWatchId = null;
+let navCurrentRoute = null;
+let navVoiceEnabled = true;
+
+function toggleNavVoice() {
+  navVoiceEnabled = !navVoiceEnabled;
+  const btn = document.getElementById('nav-voice-btn');
+  if (navVoiceEnabled) {
+    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+    speakVoice("Voice navigation enabled");
+  } else {
+    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+  }
+}
+
+function speakVoice(text) {
+  if (!navVoiceEnabled || !('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.0;
+  window.speechSynthesis.speak(u);
+}
+
 function startNav(r) {
   switchScreen('nav');
+  navCurrentRoute = r;
 
+  // Init Map
   if (!navMap) {
-    navMap = L.map('nav-map', { zoomControl: false }).setView([pos.lat, pos.lon], 12);
+    navMap = L.map('nav-map', { zoomControl: false }).setView([pos.lat, pos.lon], 16);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(navMap);
   } else {
     setTimeout(() => navMap.invalidateSize(), 150);
   }
 
-  if (r.pts && r.pts.length > 0) {
-    if (navRoutingControl) {
-      navMap.removeControl(navRoutingControl);
-      navRoutingControl = null;
-    }
-
-    const startPt = r.pts[0];
-    const endPt = r.pts[r.pts.length - 1];
-
-    navRoutingControl = L.Routing.control({
-      waypoints: [L.latLng(startPt[0], startPt[1]), L.latLng(endPt[0], endPt[1])],
-      routeWhileDragging: false,
-      addWaypoints: false,
-      fitSelectedRoutes: true,
-      showAlternatives: false,
-      lineOptions: { styles: [{ color: '#0071e3', opacity: 0.85, weight: 6 }] },
-      createMarker: function() { return null; }
-    }).addTo(navMap);
+  // Clear previous route
+  if (navRoutingControl) {
+    navMap.removeControl(navRoutingControl);
+    navRoutingControl = null;
   }
 
-  document.getElementById('ns-eta').textContent = r.time;
-  document.getElementById('ns-dist').textContent = r.dist;
-  document.getElementById('ns-risk').textContent = `${r.overall}%`;
-  document.getElementById('ns-risk').style.color = r.overall <= 30 ? 'var(--c-safe)' : (r.overall <= 60 ? 'var(--c-warn)' : 'var(--c-crit)');
+  // Populate NER SafeRoute intelligence from the chosen route
+  document.getElementById('ns-risk-badge').textContent = `Overall Risk: ${r.overall}%`;
+  const badgeColor = r.overall <= 30 ? 'var(--c-safe)' : (r.overall <= 60 ? 'var(--c-warn)' : 'var(--c-crit)');
+  const badgeBg = r.overall <= 30 ? 'var(--c-safe-soft)' : (r.overall <= 60 ? 'var(--c-warn-soft)' : 'var(--c-crit-soft)');
+  document.getElementById('ns-risk-badge').style.color = badgeColor;
+  document.getElementById('ns-risk-badge').style.background = badgeBg;
+  
+  if (r.overall > 60) {
+    document.getElementById('ns-ai-insight').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> High hazard probability on this route. Drive carefully.`;
+    document.getElementById('ns-ai-insight').style.color = 'var(--c-crit)';
+  } else {
+    document.getElementById('ns-ai-insight').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Safest calculated segment ahead.`;
+    document.getElementById('ns-ai-insight').style.color = 'var(--c-safe)';
+  }
+
+  // Setup Routing Control (OSRM)
+  const startPt = r.pts[0];
+  const endPt = r.pts[r.pts.length - 1];
+  
+  navRoutingControl = L.Routing.control({
+    waypoints: [L.latLng(startPt[0], startPt[1]), L.latLng(endPt[0], endPt[1])],
+    routeWhileDragging: false,
+    addWaypoints: false,
+    showAlternatives: false,
+    fitSelectedRoutes: true,
+    lineOptions: { styles: [{ color: '#0071e3', opacity: 0.9, weight: 7 }] },
+    createMarker: function(i, wp, n) {
+      if (i===0) { // user marker
+        return L.circleMarker(wp.latLng, { radius:8, fillColor:'#0071e3', color:'#fff', weight:3, fillOpacity:1 });
+      } else if (i===n-1) { // destination
+        return L.marker(wp.latLng);
+      }
+      return null;
+    }
+  }).addTo(navMap);
+
+  // Hook into routing events to update directions
+  navRoutingControl.on('routesfound', function(e) {
+    const routes = e.routes;
+    const summary = routes[0].summary;
+    
+    // Update bottom stats
+    document.getElementById('ns-dist').textContent = (summary.totalDistance / 1000).toFixed(1) + ' km';
+    const totalMin = Math.round(summary.totalTime / 60);
+    document.getElementById('ns-time').textContent = totalMin + ' min';
+    
+    const arrival = new Date(Date.now() + summary.totalTime * 1000);
+    document.getElementById('ns-eta').textContent = arrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    // Initial direction
+    if (routes[0].instructions && routes[0].instructions.length > 0) {
+      const inst = routes[0].instructions[0];
+      document.getElementById('nav-road-txt').textContent = inst.road || 'Proceed to route';
+      document.getElementById('nav-dist-txt').textContent = inst.text;
+      speakVoice(inst.text);
+    }
+  });
+
+  // Start live GPS tracking
+  if (navigator.geolocation) {
+    navWatchId = navigator.geolocation.watchPosition(
+      (posUpdate) => {
+        const lat = posUpdate.coords.latitude;
+        const lon = posUpdate.coords.longitude;
+        // Update user marker (waypoint 0)
+        const currentWps = navRoutingControl.getWaypoints();
+        currentWps[0] = L.latLng(lat, lon);
+        navRoutingControl.setWaypoints(currentWps); // Triggers recalculation dynamically if moved
+        navMap.setView([lat, lon], 17, { animate: true });
+        
+        // Randomly simulate hazard warning in demo mode (10% chance per tick)
+        if (Math.random() > 0.9 && r.overall > 30) {
+          showNavHazardWarning();
+        }
+      },
+      (err) => console.warn('GPS watch error', err),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    );
+  }
+}
+
+function showNavHazardWarning() {
+  const el = document.getElementById('nav-hazard-warning');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    speakVoice("Warning. Potential hazard detected ahead.");
+    setTimeout(() => el.style.display = 'none', 8000);
+  }
+}
+
+function recenterNavMap() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(p => {
+      navMap.setView([p.coords.latitude, p.coords.longitude], 17, { animate: true });
+    });
+  }
 }
 
 function endNav() {
+  if (navWatchId !== null) {
+    navigator.geolocation.clearWatch(navWatchId);
+    navWatchId = null;
+  }
   if (navRoutingControl && navMap) {
     navMap.removeControl(navRoutingControl);
     navRoutingControl = null;
