@@ -578,7 +578,8 @@ svg { display: block; flex-shrink: 0; }
 }
 
 /* NAVIGATION SCREEN */
-#screen-nav { position: fixed !important; inset: 0 !important; z-index: 200 !important; }
+#screen-nav { position: fixed !important; inset: 0 !important; z-index: 500 !important; background: #fff; }
+#screen-nav .leaflet-routing-container { display: none !important; }
 .nav-map-wrap { flex: 1; position: relative; }
 #nav-map { position: absolute; inset: 0; }
 
@@ -1693,6 +1694,7 @@ function endNav() {
     navMap.removeControl(navRoutingControl);
     navRoutingControl = null;
   }
+  const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='';
   switchScreen('home');
 }
 
@@ -2065,6 +2067,7 @@ function switchScreen(screenName) {
     startAdminPoll();
   } else if (screenName === 'nav') {
     document.getElementById('screen-nav').classList.add('active');
+    const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='none';
   }
 }
 
@@ -2183,7 +2186,8 @@ async function submitReport() {
   } catch (e) {}
   setTimeout(() => {
     showToast('Report submitted! Pending admin verification.');
-    switchScreen('home');
+    const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='';
+  switchScreen('home');
     document.getElementById('report-note').value = '';
     clearPhoto();
   }, 600);
