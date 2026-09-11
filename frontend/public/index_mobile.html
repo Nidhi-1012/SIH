@@ -1503,6 +1503,9 @@ try {
 
 // Check session on startup and update UI
 async function checkAdminSession() {
+  if (!supabaseClient && window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+  }
   if (!supabaseClient) return null;
   try {
     const { data } = await supabaseClient.auth.getSession();
@@ -1584,6 +1587,11 @@ async function handleAdminAuth() {
   btnSubmit.disabled = true;
 
   try {
+    if (!supabaseClient && window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+    }
+    if (!supabaseClient) throw new Error("Supabase SDK not loaded. Check internet connection.");
+
     if (authMode === 'signup') {
       const org = document.getElementById('admin-auth-org').value.trim() || 'Highway Authority';
       const { data, error } = await supabaseClient.auth.signUp({
