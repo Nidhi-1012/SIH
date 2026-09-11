@@ -21,6 +21,7 @@ from app.services.weather_service import get_district_weather
 from app.services.risk_model_service import calculate_segment_risk
 from app.services.routing_service import calculate_candidate_routes
 from app.services import ml_risk_service
+from app.services.status_engine import evaluate_segment_state
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -316,9 +317,12 @@ async def sync_all_districts_weather(db: Session = Depends(get_db)):
                 IncidentReport.status == "Verified"
             ).all()
             risk_info = calculate_segment_risk(seg, weather.get("rainfall_24h", 0.0), incidents)
-            seg.risk_score = risk_info["risk_score"]
-            seg.status = risk_info["status"]
-            seg.confidence = risk_info["confidence"]
+            status, risk_score, confidence = evaluate_segment_state(
+                seg, incidents, risk_info["risk_score"], weather.get("rainfall_24h", 0.0)
+            )
+            seg.risk_score = risk_score
+            seg.status = status
+            seg.confidence = confidence
             seg.last_updated = datetime.datetime.utcnow()
 
     db.commit()
