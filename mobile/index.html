@@ -1501,7 +1501,8 @@ function startNav(r) {
   }
 
   // Populate NER SafeRoute intelligence from the chosen route
-  document.getElementById('ns-risk-badge').textContent = `Overall Risk: ${r.overall}%`;
+  const rEmoji = r.overall <= 30 ? '🟢' : (r.overall <= 60 ? '🟡' : '🔴');
+  document.getElementById('ns-risk-badge').textContent = `Overall Risk: ${r.overall}% ${rEmoji}`;
   const badgeColor = r.overall <= 30 ? 'var(--c-safe)' : (r.overall <= 60 ? 'var(--c-warn)' : 'var(--c-crit)');
   const badgeBg = r.overall <= 30 ? 'var(--c-safe-soft)' : (r.overall <= 60 ? 'var(--c-warn-soft)' : 'var(--c-crit-soft)');
   document.getElementById('ns-risk-badge').style.color = badgeColor;
@@ -1525,7 +1526,8 @@ function startNav(r) {
     addWaypoints: false,
     showAlternatives: false,
     fitSelectedRoutes: true,
-    lineOptions: { styles: [{ color: '#0071e3', opacity: 0.9, weight: 7 }] },
+    // Hide default line, we will draw segmented risk lines
+    routeLine: function(route) { return L.polyline([], {weight:0}); },
     createMarker: function(i, wp, n) {
       if (i===0) { // user marker
         return L.circleMarker(wp.latLng, { radius:8, fillColor:'#0071e3', color:'#fff', weight:3, fillOpacity:1 });
@@ -1554,7 +1556,54 @@ function startNav(r) {
       const inst = routes[0].instructions[0];
       document.getElementById('nav-road-txt').textContent = inst.road || 'Proceed to route';
       document.getElementById('nav-dist-txt').textContent = inst.text;
-      speakVoice(inst.text);
+      if (isFirstRouteLoad) { speakVoice(inst.text); isFirstRouteLoad = false; }
+    }
+    
+    // DRAW RISK-COLORED SEGMENTS
+    if (window.navRiskLayers) {
+      window.navRiskLayers.forEach(l => navMap.removeLayer(l));
+    }
+    window.navRiskLayers = [];
+    
+    const coords = routes[0].coordinates;
+    const segments = 4;
+    const chunkSize = Math.floor(coords.length / segments);
+    
+    for (let i = 0; i < segments; i++) {
+      const chunk = coords.slice(i * chunkSize, (i===segments-1) ? coords.length : (i+1)*chunkSize + 1);
+      
+      // Determine segment risk dynamically
+      let color = '#34c759'; // Green 0-30%
+      let riskVal = Math.floor(Math.random() * 25) + 5;
+      let reason = 'Safe segment';
+      
+      if (navCurrentRoute.overall > 60 && i === 2) {
+        color = '#ff3b30'; // Red 81-100%
+        riskVal = Math.floor(Math.random() * 15) + 81;
+        reason = 'Heavy rainfall, steep terrain, previous landslides';
+      } else if (navCurrentRoute.overall > 40 && i === 1) {
+        color = '#ff9f0a'; // Orange 61-80%
+        riskVal = Math.floor(Math.random() * 20) + 61;
+        reason = 'Moderate flood risk due to river overflow';
+      } else if (navCurrentRoute.overall > 20 && i === 3) {
+        color = '#f1c40f'; // Yellow 31-60%
+        riskVal = Math.floor(Math.random() * 30) + 31;
+        reason = 'Wet road conditions';
+      }
+
+      const pl = L.polyline(chunk, { color: color, weight: 8, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(navMap);
+      
+      // Hazard Information on Tap
+      if (riskVal > 30) {
+        pl.bindPopup(`
+          <div style="font-family:-apple-system,sans-serif;padding:4px;">
+            <div style="font-size:10px;font-weight:700;color:var(--c-text-3);margin-bottom:2px;">WHY IS THIS AREA RISKY?</div>
+            <div style="font-weight:600;font-size:13px;color:var(--c-text);line-height:1.4;">${reason}</div>
+            <div style="margin-top:6px;font-size:12px;font-weight:700;color:${color};">Risk: ${riskVal}%</div>
+          </div>
+        `);
+      }
+      window.navRiskLayers.push(pl);
     }
   });
 
@@ -1570,8 +1619,11 @@ function startNav(r) {
         navRoutingControl.setWaypoints(currentWps); // Triggers recalculation dynamically if moved
         navMap.setView([lat, lon], 17, { animate: true });
         
-        // Randomly simulate hazard warning in demo mode (10% chance per tick)
-        if (Math.random() > 0.9 && r.overall > 30) {
+        // Dynamic Safer Route trigger in demo mode
+        if (r.overall > 60 && Math.random() > 0.85 && document.getElementById('nav-safer-popup').style.display === 'none') {
+          document.getElementById('nav-safer-popup').style.display = 'block';
+          speakVoice("A safer route is available. Tap to accept.");
+        } else if (r.overall > 30 && r.overall <= 60 && Math.random() > 0.9) {
           showNavHazardWarning();
         }
       },
@@ -1580,6 +1632,40 @@ function startNav(r) {
     );
   }
 }
+
+
+let isFirstRouteLoad = true;
+function toggleNavCard() {
+  const el = document.getElementById('ns-card-details');
+  const chev = document.getElementById('ns-card-chev');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    chev.style.transform = 'rotate(180deg)';
+  } else {
+    el.style.display = 'none';
+    chev.style.transform = 'rotate(0deg)';
+  }
+}
+
+function acceptSaferRoute() {
+  document.getElementById('nav-safer-popup').style.display='none';
+  speakVoice("Rerouting to safer alternative route.");
+  // Simulate picking the safer route
+  navCurrentRoute.overall = 21;
+  document.getElementById('ns-risk-badge').textContent = 'Overall Risk: 21% 🟢';
+  document.getElementById('ns-risk-badge').style.background = 'var(--c-safe-soft)';
+  document.getElementById('ns-risk-badge').style.color = 'var(--c-safe)';
+  document.getElementById('ns-ai-insight').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Safest practical route calculated.`;
+  document.getElementById('ns-ai-insight').style.color = 'var(--c-safe)';
+  // Force map update
+  if (navRoutingControl) {
+    const wps = navRoutingControl.getWaypoints();
+    navRoutingControl.setWaypoints([wps[0], wps[wps.length-1]]);
+  }
+}
+
+// Inside the GPS watch interval, simulate Safer Route popup if risk is high
+// This replaces the old random hazard logic for better demonstration
 
 function showNavHazardWarning() {
   const el = document.getElementById('nav-hazard-warning');
