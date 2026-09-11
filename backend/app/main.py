@@ -20,6 +20,7 @@ from app.schemas import (
 from app.services.weather_service import get_district_weather
 from app.services.risk_model_service import calculate_segment_risk
 from app.services.routing_service import calculate_candidate_routes
+from app.services import ml_risk_service
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -45,6 +46,7 @@ EMERGENCY_MODE = False
 @app.on_event("startup")
 def seed_database():
     """Load pilot corridor seed dataset into database if empty."""
+    ml_risk_service.load_model()
     db = next(get_db())
     if db.query(RoadSegment).count() == 0:
         possible_paths = ["../data/pilot_corridor.json", "./data/pilot_corridor.json", "data/pilot_corridor.json"]

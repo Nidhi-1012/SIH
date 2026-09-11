@@ -68,7 +68,8 @@ class RiskAssessment(BaseModel):
     disruption_prob_24h: float
     confidence: float
     status: str
-    top_factors: List[dict] # e.g. [{"factor": "Heavy Rain 24h", "impact": "+35%"}, ...]
+    top_factors: List[dict]
+    risk_source: str  # "ml_model" or "rule_based_fallback" — never fabricate which one produced this score
 
 class RouteQuery(BaseModel):
     origin: str
