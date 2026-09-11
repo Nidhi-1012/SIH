@@ -1,18 +1,10 @@
 import pathlib
+text = pathlib.Path(r'C:\Users\hp\OneDrive\Desktop\SIH\frontend\user\index.html').read_text(encoding='utf-8')
 
-targets = [
-    r'C:\Users\hp\OneDrive\Desktop\SIH\frontend\user\index.html',
-    r'C:\Users\hp\OneDrive\Desktop\SIH\mobile\app.html',
-    r'C:\Users\hp\OneDrive\Desktop\SIH\mobile\index.html',
-    r'C:\Users\hp\OneDrive\Desktop\SIH\frontend\public\mobile\index.html',
-    r'C:\Users\hp\OneDrive\Desktop\SIH\frontend\public\index_mobile.html',
-]
-
-# The admin screen currently is a full-overlay screen (.screen.active = display:flex)
-# but we also need to give it a proper admin-styled header instead of the topnav.
-# Check current admin screen header
-target = targets[0]
-p = pathlib.Path(target)
-text = p.read_text(encoding='utf-8')
-idx = text.find('id="screen-admin"')
-print(text[idx:idx+1500])
+# Find the actual navbar element - check different possible IDs
+for keyword in ['id="topnav"', 'id="nav-bar"', 'id="navbar"', 'id="top-bar"', 'class="topnav"', 'class="navbar"', '<nav ', '<header ']:
+    idx = text.find(keyword)
+    if idx > -1:
+        print(f"Found '{keyword}' at {idx}")
+        print(text[max(0,idx-50):idx+200])
+        print("---")

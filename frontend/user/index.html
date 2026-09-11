@@ -1694,7 +1694,7 @@ function endNav() {
     navMap.removeControl(navRoutingControl);
     navRoutingControl = null;
   }
-  const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='';
+  const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='';
   switchScreen('home');
 }
 
@@ -2063,12 +2063,12 @@ function switchScreen(screenName) {
     setTimeout(detectReportLocation, 200);
   } else if (screenName === 'admin') {
     document.getElementById('screen-admin').classList.add('active');
-    const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='none';
+    const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='none';
     loadAdminIncidents();
     startAdminPoll();
   } else if (screenName === 'nav') {
     document.getElementById('screen-nav').classList.add('active');
-    const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='none';
+    const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='none';
   }
 }
 
@@ -2187,7 +2187,7 @@ async function submitReport() {
   } catch (e) {}
   setTimeout(() => {
     showToast('Report submitted! Pending admin verification.');
-    const tnav = document.getElementById('topnav'); if(tnav) tnav.style.display='';
+    const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='';
   switchScreen('home');
     document.getElementById('report-note').value = '';
     clearPhoto();
