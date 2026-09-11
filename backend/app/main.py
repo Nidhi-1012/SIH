@@ -102,7 +102,8 @@ def health_check():
         from sqlalchemy import text
         db = next(get_db())
         db.execute(text("SELECT 1"))
-        db_status = "connected (PostgreSQL/PostGIS)"
+        backend_name = engine.url.get_backend_name()  # "sqlite" or "postgresql"
+        db_status = f"connected ({backend_name})"
     except Exception as e:
         db_status = f"disconnected ({str(e)})"
 
@@ -446,7 +447,8 @@ def simulate_vehicle_telemetry(vehicle_id: str = "VEH-MED-01"):
         "timestamp": now.isoformat()
     }
 
-# Mount mobile web app static files
-mobile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../mobile"))
+# Mount the NER SafeRoute web app so the backend can serve it standalone
+# (single port, no separate frontend process) for low-connectivity deployments.
+mobile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/user"))
 if os.path.exists(mobile_path):
     app.mount("/mobile", StaticFiles(directory=mobile_path, html=True), name="mobile")
