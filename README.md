@@ -79,7 +79,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --port 8000 --reload
 ```
 * API Documentation: `http://127.0.0.1:8000/docs`
-* Mobile Application: `http://127.0.0.1:8000/mobile/app.html`
+* Mobile Application (served standalone by the backend): `http://127.0.0.1:8000/mobile/`
 
 ### 2. Frontend Command Center
 ```bash

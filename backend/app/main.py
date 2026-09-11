@@ -19,6 +19,8 @@ from app.services.weather_service import get_district_weather
 from app.services.risk_model_service import calculate_segment_risk
 from app.services.routing_service import calculate_candidate_routes
 from app.services.auth_service import get_current_user, get_optional_user, require_role, register_user, register_officer
+from app.services import ml_risk_service
+from app.services.status_engine import evaluate_segment_state
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -44,6 +46,7 @@ EMERGENCY_MODE = False
 @app.on_event("startup")
 def seed_database():
     """Load pilot corridor seed dataset into database if empty."""
+    ml_risk_service.load_model()
     db = next(get_db())
     if db.query(RoadSegment).count() == 0:
         possible_paths = ["../data/pilot_corridor.json", "./data/pilot_corridor.json", "data/pilot_corridor.json"]
@@ -101,7 +104,8 @@ def health_check():
         from sqlalchemy import text
         db = next(get_db())
         db.execute(text("SELECT 1"))
-        db_status = "connected (PostgreSQL/PostGIS)"
+        backend_name = engine.url.get_backend_name()  # "sqlite" or "postgresql"
+        db_status = f"connected ({backend_name})"
     except Exception as e:
         db_status = f"disconnected ({str(e)})"
 
@@ -316,9 +320,12 @@ async def sync_all_districts_weather(db: Session = Depends(get_db)):
                 IncidentReport.status == "Verified"
             ).all()
             risk_info = calculate_segment_risk(seg, weather.get("rainfall_24h", 0.0), incidents)
-            seg.risk_score = risk_info["risk_score"]
-            seg.status = risk_info["status"]
-            seg.confidence = risk_info["confidence"]
+            status, risk_score, confidence = evaluate_segment_state(
+                seg, incidents, risk_info["risk_score"], weather.get("rainfall_24h", 0.0)
+            )
+            seg.risk_score = risk_score
+            seg.status = status
+            seg.confidence = confidence
             seg.last_updated = datetime.datetime.utcnow()
 
     db.commit()
@@ -523,3 +530,9 @@ def list_live_drivers(db: Session = Depends(get_db), officer: dict = Depends(req
             "is_online": bool(latest and latest.timestamp >= online_cutoff),
         })
     return result
+
+# Mount the NER SafeRoute web app so the backend can serve it standalone
+# (single port, no separate frontend process) for low-connectivity deployments.
+mobile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/user"))
+if os.path.exists(mobile_path):
+    app.mount("/mobile", StaticFiles(directory=mobile_path, html=True), name="mobile")

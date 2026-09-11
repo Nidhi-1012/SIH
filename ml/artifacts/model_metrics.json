@@ -1,15 +1,17 @@
 {
-  "champion_model": "RandomForestClassifier",
-  "roc_auc": 0.9893,
-  "f1_score": 0.9868,
+  "trained_on": "synthetic_data",
+  "n_samples": 3000,
+  "n_features": 7,
+  "accuracy": 0.8817,
+  "f1_score": 0.7491,
+  "roc_auc": 0.9365,
   "feature_importances": {
-    "rainfall_1h": 0.0514,
-    "rainfall_6h": 0.1234,
-    "rainfall_24h": 0.1642,
-    "forecast_24h_rain": 0.1319,
-    "slope_deg": 0.2286,
-    "landslide_susceptibility": 0.1106,
-    "soil_saturation": 0.1382,
-    "incident_count": 0.0518
+    "rainfall_1h": 0.1457,
+    "rainfall_6h": 0.1923,
+    "rainfall_24h": 0.2595,
+    "forecast_24h_rain": 0.1435,
+    "landslide_susceptibility": 0.1402,
+    "base_risk_score": 0.0596,
+    "historical_incident_count": 0.0592
   }
 }
