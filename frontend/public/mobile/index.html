@@ -1235,7 +1235,7 @@ window.addEventListener('click', (e) => {
 /* ---- REAL BACKEND MONITORED CORRIDORS ---- */
 async function loadLiveCorridors() {
   try {
-    const res = await fetch('/api/v1/segments').catch(() => fetch('http://127.0.0.1:8000/api/v1/segments'));
+    const res = await fetch('/api/v1/segments').catch(() => fetch('/api/v1/segments'));
     if (!res || !res.ok) return;
     const segs = await res.json();
 
@@ -1291,7 +1291,7 @@ async function findRoutes() {
   const localData = DB[key];
 
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/v1/route', {
+    const res = await fetch('/api/v1/route', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ origin: 'Guwahati', destination: destInput, priority_class: 'P2' })
@@ -1623,7 +1623,7 @@ function switchAdminTab(tab) {
 
 async function updateAdminBadgeCount() {
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents?status=Pending');
+    const res = await fetch('/api/v1/incidents?status=Pending');
     if (!res.ok) return;
     const data = await res.json();
     const count = Array.isArray(data) ? data.filter(i => i.status === 'Pending').length : 0;
@@ -1648,7 +1648,7 @@ async function loadAdminIncidents() {
   }
 
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/v1/incidents');
+    const res = await fetch('/api/v1/incidents');
     if (!res.ok) throw new Error('API error');
     allAdminIncidents = await res.json();
 
@@ -1810,6 +1810,7 @@ function switchScreen(screenName) {
   } else if (screenName === 'admin') {
     document.getElementById('screen-admin').classList.add('active');
     loadAdminIncidents();
+    startAdminPoll();
   } else if (screenName === 'nav') {
     document.getElementById('screen-nav').classList.add('active');
   }
@@ -1820,7 +1821,7 @@ async function loadAlertsList() {
   const container = document.getElementById('alerts-list');
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--c-text-2);">Loading live disruption alerts...</div>';
   try {
-    const res = await fetch('/api/v1/alerts').catch(() => fetch('http://127.0.0.1:8000/api/v1/alerts'));
+    const res = await fetch('/api/v1/alerts').catch(() => fetch('/api/v1/alerts'));
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
       document.getElementById('nav-alert-badge').textContent = data.length;
@@ -1855,15 +1856,15 @@ async function submitReport() {
   const note = document.getElementById('report-note').value.trim();
   showToast('Submitting verified report with GPS coordinates...');
   try {
-    await fetch('http://127.0.0.1:8000/api/v1/incidents', {
+    await fetch('/api/v1/incidents', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         incident_type: selHazard,
         severity: 'High',
-        description: note || `${selHazard} reported on active corridor`,
-        latitude: pos.lat,
-        longitude: pos.lon
+        notes: note || `${selHazard} reported on active corridor`,
+        lat: pos.lat,
+        lon: pos.lon
       })
     });
   } catch (e) {}
@@ -1911,6 +1912,22 @@ window.addEventListener('DOMContentLoaded', () => {
   // Live weather auto-poll every 60s
   setInterval(fetchLiveWeather, 60000);
 });
+
+/* ---- ADMIN PANEL AUTO-REFRESH ---- */
+let adminPollTimer = null;
+function startAdminPoll() {
+  stopAdminPoll();
+  adminPollTimer = setInterval(() => {
+    if (document.getElementById('screen-admin') &&
+        document.getElementById('screen-admin').classList.contains('active')) {
+      loadAdminIncidents();
+    }
+  }, 10000); // refresh every 10 seconds
+}
+function stopAdminPoll() {
+  if (adminPollTimer) { clearInterval(adminPollTimer); adminPollTimer = null; }
+}
+
 </script>
 </body>
 </html>
