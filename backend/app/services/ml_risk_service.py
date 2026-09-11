@@ -44,8 +44,10 @@ def predict_disruption_probability(features: Dict[str, float]) -> Tuple[float, D
     if _model is None:
         raise RuntimeError("model not loaded — call is_model_loaded() before predicting")
 
-    ordered_values = [[features[col] for col in _feature_columns]]
-    probability = float(_model.predict_proba(ordered_values)[0][1])
+    import pandas as pd
+
+    ordered_row = pd.DataFrame([{col: features[col] for col in _feature_columns}], columns=_feature_columns)
+    probability = float(_model.predict_proba(ordered_row)[0][1])
 
     # Feature importances are global to the model (not per-prediction SHAP
     # values) — this is the documented fallback from the PRD's own risk
