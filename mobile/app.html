@@ -672,6 +672,53 @@ svg { display: block; flex-shrink: 0; }
   .weather-chip-btn .wx-text { display: none; }
   .brand-sub { display: none; }
 }
+
+/* Apple Bottom Mid Admin Button */
+.sidebar-bottom-admin {
+  position: sticky;
+  bottom: -18px;
+  margin: auto -18px -18px -18px;
+  padding: 12px 18px;
+  background: rgba(250, 250, 252, 0.92);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30;
+}
+.btn-sidebar-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  background: #ffffff;
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.btn-sidebar-admin:hover {
+  background: var(--c-primary-soft);
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.btn-sidebar-admin:active {
+  transform: scale(0.98);
+}
+.btn-sidebar-admin svg {
+  color: var(--c-primary);
+}
+
 </style>
 </head>
 
@@ -830,6 +877,17 @@ svg { display: block; flex-shrink: 0; }
           </div>
           <div id="desk-route-list"></div>
         </div>
+      </div>
+      <!-- SIDEBAR BOTTOM MID ADMIN BUTTON -->
+      <div class="sidebar-bottom-admin">
+        <button onclick="switchScreen('admin')" class="btn-sidebar-admin" title="Open Admin Verification Portal">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span>Admin Portal</span>
+          <span class="nav-badge-count" id="sidebar-admin-badge" style="display:none;background:var(--c-warn);color:#ffffff;margin-left:4px;">0</span>
+        </button>
       </div>
     </aside>
 
