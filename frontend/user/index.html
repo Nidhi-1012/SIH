@@ -2001,7 +2001,7 @@ async function approveIncident(id) {
 
   showToast('Authenticating with Supabase & broadcasting alert...');
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/v1/incidents/${id}/approve`, {
+    const res = await fetch(`/api/v1/incidents/${id}/approve`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + currentAdminSession.access_token
@@ -2033,7 +2033,7 @@ async function rejectIncident(id) {
 
   showToast('Dismissing hazard report...');
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/v1/incidents/${id}/reject`, {
+    const res = await fetch(`/api/v1/incidents/${id}/reject`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + currentAdminSession.access_token
