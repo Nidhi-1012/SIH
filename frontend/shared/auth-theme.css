@@ -1,0 +1,405 @@
+/* NER SafeRoute — shared theme for landing page + login screens
+   (frontend/index.html, frontend/login/{user,driver,officer}/index.html)
+   Per-page files override --c-primary / --c-primary-rgb / --c-primary-dark
+   to set the role color; everything else is shared here. */
+
+:root {
+  --c-primary: #0071e3;
+  --c-primary-rgb: 0, 113, 227;
+  --c-primary-dark: #0058b5;
+  --c-safe: #34c759;
+  --c-warn: #ff9f0a;
+  --c-danger: #ff3b30;
+  --c-danger-rgb: 255, 59, 48;
+  --c-bg: #f5f5f7;
+  --c-surface: #fff;
+  --c-text: #1d1d1f;
+  --c-text-2: #6e6e73;   /* AA-safe secondary text on white (~4.6:1) */
+  --c-text-3: #86868b;   /* decorative / non-content use only (timestamps, legal footer) */
+  --c-border: rgba(0, 0, 0, 0.1);
+  --c-card-border: rgba(0, 0, 0, 0.06);
+  --radius-lg: 22px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 14px 34px -12px rgba(0, 0, 0, 0.14);
+  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.06), 0 22px 50px -14px rgba(0, 0, 0, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+body {
+  color: var(--c-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 20px;
+  background:
+    radial-gradient(620px circle at 6% -8%, rgba(var(--c-primary-rgb), 0.12), transparent 60%),
+    radial-gradient(520px circle at 108% 12%, rgba(var(--c-primary-rgb), 0.08), transparent 55%),
+    radial-gradient(700px circle at 50% 115%, rgba(var(--c-primary-rgb), 0.06), transparent 60%),
+    var(--c-bg);
+  background-attachment: fixed;
+}
+
+/* Visible, consistent focus state on every interactive element.
+   :focus-visible so mouse clicks don't get a keyboard-style ring. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2.5px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ---------- Entrance motion ---------- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .fade-up { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
+
+/* ---------- Back button ---------- */
+.back-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.back-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
+
+/* ---------- Icon badge (role icons — SVG, gradient fill, no emoji) ---------- */
+.icon-box {
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  background: linear-gradient(135deg, var(--c-primary), var(--c-primary-dark));
+  box-shadow: 0 10px 26px -8px rgba(var(--c-primary-rgb), 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  position: relative;
+}
+.icon-box.icon-box-lg { width: 76px; height: 76px; margin-bottom: 18px; }
+.icon-box.icon-box-sm { width: 54px; height: 54px; border-radius: 16px; }
+
+/* ---------- Headings ---------- */
+.title { font-size: 26px; font-weight: 800; color: var(--c-text); margin-bottom: 4px; letter-spacing: -0.4px; }
+.subtitle { font-size: 13px; color: var(--c-text-2); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
+.desc { font-size: 13.5px; color: var(--c-text-2); text-align: center; max-width: 300px; line-height: 1.5; margin-bottom: 32px; }
+
+/* ---------- Card ---------- */
+.login-card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 30px 24px 26px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--c-card-border);
+}
+.login-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--c-primary), var(--c-primary-dark));
+}
+
+/* ---------- Sign In / Create Account segmented toggle ----------
+   Makes which mode you're in an explicit, visible state instead of two
+   near-identical buttons stacked under one static form. */
+.auth-tabs {
+  display: flex;
+  background: var(--c-bg);
+  border: 1px solid var(--c-card-border);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 22px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.auth-tab:hover { color: var(--c-text); }
+.auth-tab.active {
+  background: #fff;
+  color: var(--c-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Form fields ---------- */
+.input-group { margin-bottom: 16px; }
+.input-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-2);
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+.input-wrap { position: relative; }
+.input-wrap svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-text-3);
+  pointer-events: none;
+}
+.input-group input {
+  width: 100%;
+  padding: 13px 14px 13px 42px;
+  font-size: 15px;
+  border: 1.5px solid var(--c-border);
+  border-radius: 12px;
+  background: var(--c-bg);
+  color: var(--c-text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-group input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(var(--c-primary-rgb), 0.15);
+}
+.input-group input:focus + svg,
+.input-wrap:focus-within svg { color: var(--c-primary); }
+.input-group.invalid input {
+  border-color: var(--c-danger);
+  background: rgba(var(--c-danger-rgb), 0.04);
+}
+.input-group.invalid input:focus {
+  box-shadow: 0 0 0 3px rgba(var(--c-danger-rgb), 0.15);
+}
+.input-group.valid input { border-color: var(--c-safe); }
+
+.field-msg {
+  font-size: 11.5px;
+  font-weight: 500;
+  margin-top: 5px;
+  min-height: 14px;
+  color: var(--c-danger);
+  display: none;
+}
+.input-group.invalid .field-msg { display: block; }
+
+/* Password strength meter (shown once the password field has content) */
+.pw-strength { display: none; margin-top: 9px; }
+.pw-strength.show { display: block; }
+.pw-strength-bars { display: flex; gap: 4px; height: 4px; }
+.pw-strength-bars span { flex: 1; border-radius: 2px; background: rgba(0, 0, 0, 0.08); transition: background 0.15s; }
+.pw-strength-bars span.on-weak { background: var(--c-danger); }
+.pw-strength-bars span.on-fair { background: var(--c-warn); }
+.pw-strength-bars span.on-strong { background: var(--c-safe); }
+.pw-strength-label { font-size: 11px; color: var(--c-text-2); margin-top: 5px; display: block; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.btn:active { transform: translateY(0); opacity: 0.85; }
+.btn:disabled,
+.btn.btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.btn-primary { background: linear-gradient(135deg, var(--c-primary), var(--c-primary-dark)); color: #fff; box-shadow: 0 8px 22px -4px rgba(var(--c-primary-rgb), 0.5); }
+.btn-primary:not(:disabled):hover { box-shadow: 0 10px 26px -4px rgba(var(--c-primary-rgb), 0.58); transform: translateY(-1px); }
+.btn-outline { background: #fff; color: var(--c-primary); border: 2px solid var(--c-primary); margin-top: 12px; }
+.btn-outline:not(:disabled):hover { background: rgba(var(--c-primary-rgb), 0.06); }
+
+.btn-content { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; }
+.btn-arrow { display: inline-flex; transition: transform 0.15s; }
+.btn-primary:not(:disabled):hover .btn-arrow { transform: translateX(2px); }
+
+/* Rejected-click feedback (submit attempted while the form is invalid) —
+   buttons are never pre-disabled before interaction, so this is what tells
+   someone their click didn't silently do nothing. */
+@keyframes btnShake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.btn.shake { animation: btnShake 0.4s; }
+@media (prefers-reduced-motion: reduce) { .btn.shake { animation: none; } }
+
+/* Inline spinner shown on a button while a request is in flight */
+.spinner {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.btn-outline .spinner { border-color: rgba(var(--c-primary-rgb), 0.3); border-top-color: var(--c-primary); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Status messages ---------- */
+.error-msg {
+  color: var(--c-danger);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 12px;
+  display: none;
+  padding: 10px;
+  background: rgba(var(--c-danger-rgb), 0.06);
+  border-radius: 10px;
+}
+.success-msg {
+  color: #1e8a3c;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 12px;
+  display: none;
+  padding: 10px;
+  background: rgba(52, 199, 89, 0.1);
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.success-msg .spinner { border-color: rgba(30, 138, 60, 0.25); border-top-color: #1e8a3c; }
+
+/* ---------- Officer invite-code emphasis ---------- */
+.invite-box {
+  border: 1.5px solid rgba(var(--c-primary-rgb), 0.35);
+  background: rgba(var(--c-primary-rgb), 0.06);
+  border-radius: 14px;
+  padding: 12px 14px 14px;
+}
+.invite-box label { color: var(--c-primary); display: flex; align-items: center; gap: 6px; }
+.invite-box .input-wrap input { background: #fff; }
+.invite-box .field-hint { font-size: 11px; color: var(--c-text-2); margin-top: 6px; display: block; }
+.invite-box.invalid { border-color: var(--c-danger); background: rgba(var(--c-danger-rgb), 0.05); }
+.invite-box.invalid .field-hint { color: var(--c-danger); font-weight: 600; }
+
+.footer-note {
+  margin-top: 30px;
+  padding-top: 16px;
+  font-size: 11.5px;
+  color: var(--c-text-3);
+  text-align: center;
+  line-height: 1.6;
+  position: relative;
+}
+
+/* =====================================================================
+   Split hero/form layout for the login pages — desktop/tablet only.
+   Below 900px this collapses to the original centered single column,
+   so the mobile-verified vertical rhythm never changes.
+   ===================================================================== */
+.auth-shell {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.brand-panel { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.form-panel { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+@media (min-width: 900px) {
+  .auth-shell {
+    max-width: 900px;
+    flex-direction: row;
+    align-items: stretch;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card-hover);
+    background: #fff;
+  }
+  .brand-panel {
+    flex: 1 1 44%;
+    background: linear-gradient(160deg, var(--c-primary), var(--c-primary-dark));
+    color: #fff;
+    padding: 52px 44px;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-panel::before {
+    content: "";
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    top: -70px; right: -90px;
+  }
+  .brand-panel::after {
+    content: "";
+    position: absolute;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    bottom: -60px; left: -60px;
+  }
+  .brand-panel .icon-box {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+  }
+  .brand-panel .title,
+  .brand-panel .subtitle { color: #fff; }
+  .brand-panel .desc { color: rgba(255, 255, 255, 0.82); max-width: 280px; }
+  .form-panel {
+    flex: 1 1 56%;
+    align-items: center;
+    justify-content: center;
+    padding: 52px 44px;
+  }
+  .form-panel .login-card { box-shadow: none; border: none; padding: 0; max-width: 340px; }
+  .form-panel .login-card::before { display: none; }
+  .auth-shell ~ .footer-note { max-width: 900px; }
+}

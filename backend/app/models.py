@@ -86,6 +86,15 @@ class VehicleTelemetry(Base):
     is_simulated = Column(Boolean, default=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
+class Driver(Base):
+    __tablename__ = "drivers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    driver_code = Column(String, unique=True, index=True, nullable=False)  # stable DRV-001, DRV-002, ...
+    supabase_user_id = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
 class Alert(Base):
     __tablename__ = "alerts"
 

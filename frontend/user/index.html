@@ -8,9 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
-
 <style>
 /* =============================================================
    APPLE HUMAN INTERFACE SYSTEM TOKENS
@@ -482,30 +479,38 @@ svg { display: block; flex-shrink: 0; }
 #map-area { flex: 1; position: relative; z-index: 10; }
 #the-map { position: absolute; inset: 0; }
 
-/* LEAFLET ROUTING MACHINE APPLE OVERRIDE */
-.leaflet-routing-container {
-  background: rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: saturate(180%) blur(20px) !important;
-  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
-  border: 1px solid var(--c-border) !important;
-  border-radius: var(--r-md) !important;
-  box-shadow: var(--shadow-lg) !important;
-  font-family: inherit !important;
-  color: var(--c-text) !important;
-  margin-top: 70px !important;
-  margin-right: 16px !important;
-  max-width: 320px !important;
-  max-height: 55vh !important;
-  overflow-y: auto !important;
+/* GOOGLE MAPS — hover tooltip + risk legend + alert pulse */
+.gmap-tooltip {
+  position: fixed; z-index: 900; pointer-events: none;
+  background: rgba(29,29,31,0.92); color: #fff;
+  font-size: 12px; font-weight: 600; padding: 6px 10px;
+  border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transform: translate(-50%, -130%);
+  white-space: nowrap; display: none;
 }
-.leaflet-routing-container h2, .leaflet-routing-container h3 { display: none; }
-.leaflet-routing-alt { max-height: none !important; border-bottom: none !important; }
-.leaflet-routing-alt table { border-spacing: 0; width: 100%; }
-.leaflet-routing-alt tr { border-bottom: 1px solid var(--c-border); transition: background 0.15s; }
-.leaflet-routing-alt tr:last-child { border-bottom: none; }
-.leaflet-routing-alt tr:hover { background: rgba(0, 0, 0, 0.03); }
-.leaflet-routing-alt td { padding: 10px 8px; font-size: 12.5px; font-weight: 500; }
-.leaflet-routing-icon { filter: grayscale(100%) opacity(0.7); margin-top: 2px; }
+.gmap-tooltip .sub { display:block; font-size:10.5px; font-weight:500; color:rgba(255,255,255,0.7); margin-top:1px; }
+
+.risk-legend {
+  position: absolute; left: 16px; bottom: 16px; z-index: 20;
+  display: flex; gap: 10px; background: rgba(255,255,255,0.92);
+  backdrop-filter: saturate(180%) blur(16px); -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid var(--c-border); border-radius: var(--r-pill);
+  padding: 7px 14px; font-size: 11px; font-weight: 600; color: var(--c-text-2);
+  box-shadow: var(--shadow-md);
+}
+.risk-legend span { display: flex; align-items: center; gap: 5px; }
+.risk-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+@keyframes pulse-ring-crit {
+  0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.55); }
+  70% { box-shadow: 0 0 0 14px rgba(255, 59, 48, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+.gmap-alert-marker {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--c-crit); border: 2.5px solid #fff;
+  animation: pulse-ring-crit 1.8s infinite;
+}
 
 /* =============================================================
    OVERLAYS / MODALS (ALERTS, REPORT, SOS, NAVIGATION)
@@ -579,7 +584,6 @@ svg { display: block; flex-shrink: 0; }
 
 /* NAVIGATION SCREEN */
 #screen-nav { position: fixed !important; inset: 0 !important; z-index: 500 !important; background: #fff; }
-#screen-nav .leaflet-routing-container { display: none !important; }
 .nav-map-wrap { flex: 1; position: relative; }
 #nav-map { position: absolute; inset: 0; }
 
@@ -615,6 +619,28 @@ svg { display: block; flex-shrink: 0; }
 .nav-stats { display: flex; justify-content: space-around; text-align: center; }
 .ns-val { font-size: 18px; font-weight: 600; }
 .ns-lbl { font-size: 11px; color: var(--c-text-2); text-transform: uppercase; margin-top: 2px; }
+
+#ns-risk-badge {
+  font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: var(--r-pill);
+  background: var(--c-safe-soft); color: var(--c-safe); white-space: nowrap;
+}
+#nav-voice-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.15s;
+}
+#nav-voice-btn:hover { background: rgba(255,255,255,0.25); }
+.nav-hazard-banner {
+  max-width: 440px; margin: 10px auto 0;
+  background: rgba(255, 59, 48, 0.94);
+  color: #fff; border-radius: var(--r-md);
+  padding: 11px 16px; display: flex; align-items: center; gap: 10px;
+  font-size: 12.5px; font-weight: 600; box-shadow: var(--shadow-lg);
+  animation: hazardSlide 0.3s ease;
+}
+@keyframes hazardSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .nav-hazard-banner { animation: none; } }
 
 /* MODAL & TOAST */
 .modal-bg {
@@ -819,7 +845,7 @@ svg { display: block; flex-shrink: 0; }
         <div class="input-group" style="position:relative;">
           <div class="pin-origin"></div>
           <input id="desk-origin" type="text" placeholder="Your Location" autocomplete="off"
-            onfocus="showOriginDropdown()" onblur="hideOriginDropdown()" oninput="hideOriginDropdown()"/>
+            onfocus="showOriginDropdown()" onblur="hideOriginDropdown()" oninput="originOverrideCoords=null;hideOriginDropdown()"/>
           <!-- Current Location dropdown -->
           <div id="origin-dropdown" style="
             display:none;
@@ -876,11 +902,10 @@ svg { display: block; flex-shrink: 0; }
             </div>
           </div>
           <div id="desk-corridor-list">
-            <!-- Populated via API -->
-            <div class="corridor-card"><div><div class="corridor-name">NH-6 Guwahati–Nongpoh</div><div class="corridor-sub">Kamrup to Ri-Bhoi</div></div><span class="risk-tag tag-safe">Safe 18%</span></div>
-            <div class="corridor-card"><div><div class="corridor-name">NH-6 Nongpoh–Umiam</div><div class="corridor-sub">Landslide Critical Zone</div></div><span class="risk-tag tag-crit">Blocked 88%</span></div>
-            <div class="corridor-card"><div><div class="corridor-name">NH-37 Guwahati–Jorhat</div><div class="corridor-sub">Kaziranga Corridor</div></div><span class="risk-tag tag-safe">Safe 12%</span></div>
-            <div class="corridor-card"><div><div class="corridor-name">NH-13 Sela Pass–Tawang</div><div class="corridor-sub">High Altitude Pass</div></div><span class="risk-tag tag-warn">Caution 55%</span></div>
+            <!-- Real data only — populated by loadLiveCorridors() from GET /api/v1/segments.
+                 Never pre-fill with example cards here: if the fetch fails, this must show
+                 an honest empty/error state, not stale-looking fake corridors. -->
+            <div style="text-align:center;padding:20px;color:var(--c-text-2);font-size:12.5px;">Loading live corridor data…</div>
           </div>
         </div>
 
@@ -909,6 +934,7 @@ svg { display: block; flex-shrink: 0; }
     <!-- FULL INTERACTIVE MAP -->
     <main id="map-area">
       <div id="the-map"></div>
+      <div class="risk-legend"><span><i style="background:#34c759;"></i>Safe</span><span><i style="background:#ff9f0a;"></i>Caution</span><span><i style="background:#ff3b30;"></i>Blocked / High Risk</span></div>
 
       <!-- MOBILE BOTTOM DRAWER -->
       <div class="mobile-bottom-drawer" id="mob-sheet">
@@ -1006,6 +1032,9 @@ svg { display: block; flex-shrink: 0; }
               <div class="input-group">
                 <input id="admin-auth-org" type="text" placeholder="Designation / Agency (e.g. SDRF Meghalaya)" style="font-size:13px;"/>
               </div>
+              <div class="input-group">
+                <input id="admin-auth-invite" type="text" placeholder="Invite Code (provided by your department)" style="font-size:13px;"/>
+              </div>
             </div>
 
             <button class="btn-analyze-route" style="margin-top:6px;" onclick="handleAdminAuth()" id="btn-auth-submit">
@@ -1021,20 +1050,30 @@ svg { display: block; flex-shrink: 0; }
       <div id="admin-panel-content" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
         <!-- TABS (APPLE SEGMENTED CONTROL) -->
         <div style="max-width:720px;width:100%;margin:16px auto 0;padding:0 20px;flex-shrink:0;">
-          <div style="background:rgba(0,0,0,0.06);padding:3px;border-radius:10px;display:flex;gap:4px;">
-            <button class="admin-tab-btn active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--c-text);">
-              Pending Review <span id="tab-cnt-Pending" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(255,159,10,0.15);color:var(--c-warn);font-size:11px;">0</span>
+          <div style="background:rgba(0,0,0,0.06);padding:3px;border-radius:10px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;">
+            <button class="admin-tab-btn active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')" style="flex:0 0 auto;white-space:nowrap;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--c-text);">
+              Pending <span id="tab-cnt-Pending" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(255,159,10,0.15);color:var(--c-warn);font-size:11px;">0</span>
             </button>
-            <button class="admin-tab-btn" id="tab-btn-Verified" onclick="switchAdminTab('Verified')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
-              Verified &amp; Live <span id="tab-cnt-Verified" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+            <button class="admin-tab-btn" id="tab-btn-Verified" onclick="switchAdminTab('Verified')" style="flex:0 0 auto;white-space:nowrap;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+              Verified <span id="tab-cnt-Verified" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
             </button>
-            <button class="admin-tab-btn" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+            <button class="admin-tab-btn" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')" style="flex:0 0 auto;white-space:nowrap;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
               Rejected <span id="tab-cnt-Rejected" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+            </button>
+            <button class="admin-tab-btn" id="tab-btn-Resolved" onclick="switchAdminTab('Resolved')" style="flex:0 0 auto;white-space:nowrap;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+              Resolved <span id="tab-cnt-Resolved" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+            </button>
+            <button class="admin-tab-btn" id="tab-btn-Drivers" onclick="switchAdminTab('Drivers')" style="flex:0 0 auto;white-space:nowrap;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+              Drivers
             </button>
           </div>
         </div>
 
         <div class="scrollable-body" id="admin-incidents-list" style="max-width:720px;padding-top:14px;"></div>
+        <div class="scrollable-body" id="admin-drivers-list" style="max-width:720px;padding-top:14px;display:none;">
+          <div id="admin-drivers-map" style="width:100%;height:220px;border-radius:var(--r-md);overflow:hidden;margin-bottom:14px;border:1px solid var(--c-border);"></div>
+          <div id="admin-drivers-cards"></div>
+        </div>
       </div>
     </div>
     <!-- REPORT HAZARD SCREEN (OVERLAY) -->
@@ -1055,19 +1094,35 @@ svg { display: block; flex-shrink: 0; }
         <div class="hazard-grid">
           <button class="hz-btn sel" onclick="pickHazard(this,'Landslide')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-            <span>Landslide / Rockfall</span>
+            <span>Landslide</span>
           </button>
-          <button class="hz-btn" onclick="pickHazard(this,'Flash Flood')">
+          <button class="hz-btn" onclick="pickHazard(this,'Flood')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 16h20M2 20h20"/></svg>
-            <span>Waterlogging / Flood</span>
+            <span>Flood</span>
           </button>
-          <button class="hz-btn" onclick="pickHazard(this,'Road Blocked')">
+          <button class="hz-btn" onclick="pickHazard(this,'Heavy Rain')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13v8M8 13v8M12 15v8"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+            <span>Heavy Rain</span>
+          </button>
+          <button class="hz-btn" onclick="pickHazard(this,'Road Blockage')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
-            <span>Road Blocked</span>
+            <span>Road Blockage</span>
           </button>
-          <button class="hz-btn" onclick="pickHazard(this,'Bridge Collapse')">
+          <button class="hz-btn" onclick="pickHazard(this,'Accident')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Accident</span>
+          </button>
+          <button class="hz-btn" onclick="pickHazard(this,'Damaged Road')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 9 4M15 4l5 16M9 12h6"/></svg>
+            <span>Damaged Road</span>
+          </button>
+          <button class="hz-btn" onclick="pickHazard(this,'Bridge Problem')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M20 19V5M4 12h16M4 8l16 8M4 16l16-8"/></svg>
-            <span>Bridge / Culvert Issue</span>
+            <span>Bridge Problem</span>
+          </button>
+          <button class="hz-btn" onclick="pickHazard(this,'Other')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Other</span>
           </button>
         </div>
 
@@ -1112,19 +1167,28 @@ svg { display: block; flex-shrink: 0; }
     <div class="screen" id="screen-nav">
       <div class="nav-map-wrap">
         <div id="nav-map"></div>
+        <div class="risk-legend"><span><i style="background:#34c759;"></i>Safe</span><span><i style="background:#ff9f0a;"></i>Caution</span><span><i style="background:#ff3b30;"></i>High Risk</span></div>
 
         <div class="nav-top-overlay">
           <div class="nav-card">
-            <div class="nav-arrow-box">
+            <div class="nav-arrow-box" id="nav-arrow-box">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5"/>
                 <polyline points="5 12 12 5 19 12"/>
               </svg>
             </div>
-            <div>
+            <div style="flex:1;min-width:0;">
               <div style="font-size:17px;font-weight:700;" id="nav-dist-txt">3.2 km</div>
-              <div style="font-size:12.5px;opacity:0.85;" id="nav-road-txt">Continue on NH-6 Safe Corridor</div>
+              <div style="font-size:12.5px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="nav-road-txt">Continue on NH-6 Safe Corridor</div>
             </div>
+            <span id="ns-risk-badge">Risk —</span>
+            <button id="nav-voice-btn" onclick="toggleNavVoice()" title="Toggle voice guidance">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+          </div>
+          <div class="nav-hazard-banner" id="nav-hazard-banner" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span id="nav-hazard-text">Entering a high-risk segment — reduce speed.</span>
           </div>
         </div>
 
@@ -1166,19 +1230,21 @@ svg { display: block; flex-shrink: 0; }
 <div class="toast" id="toast"></div>
 
 <!-- LEAFLET & ROUTING SCRIPTS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+<!-- GOOGLE MAPS — visual surface only. GraphHopper (backend) still computes every
+     route and its turn-by-turn; this never calls Google's own Directions API. -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBiEQ00R_HbK9q7A3hkSKUu1xB-9lCa7YA&libraries=geometry&v=weekly"></script>
 
 <script>
 /* =============================================================
    APPLICATION JAVASCRIPT LOGIC (ROBUST & LIVE)
 ============================================================= */
 let pos = { lat: 26.1445, lon: 91.7362 };
-let homeMap = null, navMap = null, routeLine = null, navRoutingControl = null;
+let homeMap = null, navMap = null, routeLine = null, homeUserMarker = null;
+let homeCorridorLines = [], homeAlertMarkers = [];
 let selHazard = 'Landslide';
 let currentLanguage = 'EN';
 
-// Fallback pilot corridor routes database
+// Fallback pilot corridor routes database — only used if the backend/GraphHopper is unreachable
 const DB = {
   shillong: {
     to: 'Shillong, Meghalaya',
@@ -1202,44 +1268,240 @@ const DB = {
   }
 };
 
-/* ---- MAP INITIALIZATION ---- */
-function initHomeMap() {
-  if (homeMap) return;
-  homeMap = L.map('the-map', { zoomControl: false }).setView([25.9, 91.9], 9);
-  
-  // Clean, high-performance CartoDB Voyager tiles (Apple/Google aesthetic)
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(homeMap);
+/* =============================================================
+   GOOGLE MAPS — the visual surface only. GraphHopper (backend,
+   routing_service.py) still computes every route + turn instruction;
+   nothing here ever calls Google's own Directions/routing service,
+   which would silently replace risk-aware routing with Google's
+   fastest-path routing. See CLAUDE.md.
+============================================================= */
+const MAP_STYLE = [
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfe8f7' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5f7' }] }
+];
 
-  L.control.zoom({ position: 'bottomright' }).addTo(homeMap);
+// Matches the risk thresholds already used everywhere else in this file
+// (corridor cards, route cards): safe <=30, caution <=60, else high risk.
+function riskBand(score) {
+  if (score > 60) return { color: '#ff3b30', label: 'High Risk' };
+  if (score > 30) return { color: '#ff9f0a', label: 'Caution' };
+  return { color: '#34c759', label: 'Safe' };
+}
+function toLatLng(pt) { return { lat: pt[0], lng: pt[1] }; } // backend/legacy points are [lat, lon]
 
-  // User location pin
-  const userIcon = L.divIcon({
-    html: '<div style="width:14px;height:14px;background:#0071e3;border:2.5px solid #ffffff;border-radius:50%;box-shadow:0 0 0 5px rgba(0,113,227,0.25);"></div>',
-    className: '',
-    iconAnchor: [7, 7]
+/* ---- Hover tooltip shared by every map on this page ---- */
+function getGmapTooltip() {
+  if (!window._gmapTooltipEl) {
+    window._gmapTooltipEl = document.createElement('div');
+    window._gmapTooltipEl.className = 'gmap-tooltip';
+    document.body.appendChild(window._gmapTooltipEl);
+  }
+  return window._gmapTooltipEl;
+}
+function positionTooltip(e) {
+  const tip = getGmapTooltip();
+  const evt = e && e.domEvent;
+  if (!evt) return;
+  const x = evt.clientX != null ? evt.clientX : (evt.touches && evt.touches[0] ? evt.touches[0].clientX : 0);
+  const y = evt.clientY != null ? evt.clientY : (evt.touches && evt.touches[0] ? evt.touches[0].clientY : 0);
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function wireHoverTooltip(gObject, title, sub) {
+  gObject.addListener('mouseover', (e) => {
+    const tip = getGmapTooltip();
+    tip.innerHTML = sub ? `${title}<span class="sub">${sub}</span>` : title;
+    tip.style.display = 'block';
+    positionTooltip(e);
   });
-  L.marker([pos.lat, pos.lon], { icon: userIcon }).addTo(homeMap).bindPopup('<b>Current Origin:</b> Guwahati, Assam');
-
-  // Draw initial pilot corridor network
-  drawPilotCorridors();
+  gObject.addListener('mousemove', positionTooltip);
+  gObject.addListener('mouseout', () => { getGmapTooltip().style.display = 'none'; });
+}
+function wirePolylineHover(line, title, sub, baseWeight, hoverWeight) {
+  wireHoverTooltip(line, title, sub);
+  line.addListener('mouseover', () => line.setOptions({ strokeWeight: hoverWeight, strokeOpacity: 1 }));
+  line.addListener('mouseout', () => line.setOptions({ strokeWeight: baseWeight, strokeOpacity: 0.88 }));
+}
+function markerIcon(color, scale) {
+  return { path: google.maps.SymbolPath.CIRCLE, scale: scale || 8, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 };
+}
+function wireMarkerHover(marker, title, sub, color, baseScale, hoverScale) {
+  wireHoverTooltip(marker, title, sub);
+  marker.addListener('mouseover', () => marker.setIcon(markerIcon(color, hoverScale)));
+  marker.addListener('mouseout', () => marker.setIcon(markerIcon(color, baseScale)));
+}
+// Gentle "breathing" ring around a marker — used for critical hazards and
+// online drivers, since a classic google.maps.Marker can't run CSS animation.
+function pulseMarker(marker, color, baseScale) {
+  const start = performance.now();
+  (function tick(now) {
+    if (!marker.getMap()) return; // stop once removed
+    const t = ((now - start) / 1100) % 1;
+    const ring = Math.sin(t * Math.PI * 2);
+    marker.setIcon({
+      path: google.maps.SymbolPath.CIRCLE, scale: baseScale + Math.max(0, ring) * 3,
+      fillColor: color, fillOpacity: 1,
+      strokeColor: color, strokeOpacity: Math.max(0, 0.5 - ring * 0.35), strokeWeight: 7
+    });
+    requestAnimationFrame(tick);
+  })(start);
 }
 
-function drawPilotCorridors() {
-  const segments = [
-    { name: 'NH-6 Guwahati–Nongpoh', pts: [[26.1445, 91.7362], [26.1158, 91.8210], [25.9001, 91.8805]], color: '#34c759' },
-    { name: 'NH-6 Nongpoh–Umiam', pts: [[25.9001, 91.8805], [25.6542, 91.9056]], color: '#ff3b30' },
-    { name: 'NH-6 Umiam–Shillong', pts: [[25.6542, 91.9056], [25.5788, 91.8933]], color: '#ff9f0a' },
-    { name: 'NH-6 Shillong–Jowai–Silchar', pts: [[25.5788, 91.8933], [25.4485, 92.2030], [25.1166, 92.3551], [24.8333, 92.7789]], color: '#34c759' }
-  ];
-
-  segments.forEach(seg => {
-    L.polyline(seg.pts, { color: seg.color, weight: 5, opacity: 0.85, lineCap: 'round' })
-      .addTo(homeMap)
-      .bindPopup(`<b>${seg.name}</b>`);
+// Real conditions for a clicked segment — live rainfall + verified field
+// reports, computed server-side (backend/app/services/risk_model_service.py),
+// not a guess or a flat risk number. Shared by the home map and nav screen.
+async function showSegmentRiskInfo(segmentId, latLng, map) {
+  const info = new google.maps.InfoWindow({
+    position: latLng,
+    content: '<div style="font-size:12px;padding:4px;color:#6e6e73;">Loading live conditions…</div>'
   });
+  info.open(map);
+  if (!segmentId) {
+    info.setContent('<div style="font-size:12px;padding:4px;color:#6e6e73;">No detailed data for this segment.</div>');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/v1/segments/${encodeURIComponent(segmentId)}/risk`);
+    if (!res.ok) throw new Error('risk fetch failed');
+    const data = await res.json();
+    const band = riskBand(data.risk_score);
+    const factorsHtml = (data.top_factors || []).map(f => `
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(0,0,0,0.08);">
+        <span style="color:#555;">${f.factor}</span>
+        <span style="font-weight:700;color:${band.color};white-space:nowrap;">${f.impact}</span>
+      </div>`).join('');
+    info.setContent(`
+      <div style="font-family:-apple-system,sans-serif;padding:2px;max-width:240px;">
+        <div style="font-size:10px;font-weight:700;color:#8a8a90;text-transform:uppercase;letter-spacing:.04em;">${data.district || 'NER'} &middot; Live conditions</div>
+        <div style="font-weight:700;font-size:13.5px;margin-top:3px;color:${band.color};">${data.status} &middot; ${Math.round(data.risk_score)}% risk</div>
+        <div style="font-size:10.5px;color:#8a8a90;margin-top:2px;">${Math.round(data.disruption_prob_24h * 100)}% chance of disruption in the next 24h</div>
+        <div style="margin-top:6px;">${factorsHtml || '<div style="font-size:11.5px;color:#8a8a90;">No elevated risk factors right now — baseline conditions.</div>'}</div>
+      </div>
+    `);
+  } catch (e) {
+    info.setContent('<div style="font-size:12px;padding:4px;color:#ff3b30;">Unable to load live conditions for this segment.</div>');
+  }
+}
+
+function initHomeMap() {
+  if (homeMap) return;
+  homeMap = new google.maps.Map(document.getElementById('the-map'), {
+    center: { lat: 25.9, lng: 91.9 }, zoom: 9,
+    disableDefaultUI: true, zoomControl: true,
+    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+    styles: MAP_STYLE
+  });
+
+  homeUserMarker = new google.maps.Marker({
+    position: { lat: pos.lat, lng: pos.lon }, map: homeMap, zIndex: 50,
+    icon: markerIcon('#0071e3', 7), title: 'Current Origin: Guwahati, Assam'
+  });
+
+  drawPilotCorridors(); // fallback demo network — upgraded to live data by loadLiveCorridors()
+}
+
+// Draws the monitored corridor network, colored by each segment's real
+// risk_score/status once loadLiveCorridors() has fetched it; falls back to a
+// small static demo network so the map isn't blank on first paint.
+const FALLBACK_CORRIDORS = [
+  { name: 'NH-6 Guwahati–Nongpoh', pts: [[26.1445, 91.7362], [26.1158, 91.8210], [25.9001, 91.8805]], color: '#34c759' },
+  { name: 'NH-6 Nongpoh–Umiam', pts: [[25.9001, 91.8805], [25.6542, 91.9056]], color: '#ff3b30' },
+  { name: 'NH-6 Umiam–Shillong', pts: [[25.6542, 91.9056], [25.5788, 91.8933]], color: '#ff9f0a' },
+  { name: 'NH-6 Shillong–Jowai–Silchar', pts: [[25.5788, 91.8933], [25.4485, 92.2030], [25.1166, 92.3551], [24.8333, 92.7789]], color: '#34c759' }
+];
+function drawPilotCorridors(liveSegments) {
+  homeCorridorLines.forEach(l => l.setMap(null));
+  homeCorridorLines = [];
+  homeAlertMarkers.forEach(m => m.setMap(null));
+  homeAlertMarkers = [];
+
+  if (liveSegments && liveSegments.length) {
+    liveSegments.filter(s => s.start_lat != null && s.end_lat != null).forEach(s => {
+      const path = [toLatLng([s.start_lat, s.start_lon]), toLatLng([s.end_lat, s.end_lon])];
+      const risk = s.risk_score != null ? s.risk_score : s.base_risk_score;
+      const band = riskBand(risk);
+      const line = new google.maps.Polyline({ path, map: homeMap, strokeColor: band.color, strokeOpacity: 0.88, strokeWeight: 5, zIndex: 5 });
+      line.addListener('click', (e) => showSegmentRiskInfo(s.segment_id, e.latLng, homeMap));
+      wirePolylineHover(line, s.road_name, `${s.status || band.label} · ${Math.round(risk)}% — click for weather & report details`, 5, 8);
+      homeCorridorLines.push(line);
+
+      if (s.status === 'Blocked' || band.label === 'High Risk') {
+        const mid = { lat: (s.start_lat + s.end_lat) / 2, lng: (s.start_lon + s.end_lon) / 2 };
+        const alertMarker = new google.maps.Marker({ position: mid, map: homeMap, zIndex: 60, icon: markerIcon('#ff3b30', 7) });
+        wireHoverTooltip(alertMarker, s.road_name, `${s.status || 'High Risk'} — tap segment for details`);
+        pulseMarker(alertMarker, '#ff3b30', 7);
+        homeAlertMarkers.push(alertMarker);
+      }
+    });
+  } else {
+    FALLBACK_CORRIDORS.forEach(seg => {
+      const path = seg.pts.map(toLatLng);
+      const line = new google.maps.Polyline({ path, map: homeMap, strokeColor: seg.color, strokeOpacity: 0.85, strokeWeight: 5, zIndex: 5 });
+      wirePolylineHover(line, seg.name, '', 5, 8);
+      homeCorridorLines.push(line);
+    });
+  }
+}
+
+// Replaces the hardcoded Guwahati default with the visitor's real device
+// location, when they grant permission — runs once at startup, silently
+// keeps the fallback coordinates if denied/unavailable (no error shown,
+// since this is a background upgrade, not something the user asked for yet).
+function detectRealHomeLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (p) => {
+      pos.lat = p.coords.latitude;
+      pos.lon = p.coords.longitude;
+      if (homeUserMarker) homeUserMarker.setPosition({ lat: pos.lat, lng: pos.lon });
+      if (homeMap) homeMap.panTo({ lat: pos.lat, lng: pos.lon });
+    },
+    () => { /* keep the Guwahati fallback — this is a silent upgrade attempt */ },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+  );
+}
+
+/* ---- JOURNEY PLANNER: ORIGIN FIELD ---- */
+let originOverrideCoords = null; // set by "Use Current Location"; cleared on manual typing
+
+function showOriginDropdown() {
+  document.getElementById('origin-dropdown').style.display = 'block';
+}
+function hideOriginDropdown() {
+  // Deferred so the dropdown button's onmousedown still fires before blur hides it
+  setTimeout(() => {
+    const dd = document.getElementById('origin-dropdown');
+    if (dd) dd.style.display = 'none';
+  }, 150);
+}
+function useCurrentLocationAsOrigin(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('desk-origin');
+  input.value = 'Detecting your location…';
+  if (!navigator.geolocation) {
+    input.value = '';
+    showToast('Geolocation is not available on this device.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (p) => {
+      pos.lat = p.coords.latitude;
+      pos.lon = p.coords.longitude;
+      originOverrideCoords = `${pos.lat},${pos.lon}`;
+      input.value = 'Current Location';
+      if (homeUserMarker) homeUserMarker.setPosition({ lat: pos.lat, lng: pos.lon });
+      if (homeMap) homeMap.panTo({ lat: pos.lat, lng: pos.lon });
+      document.getElementById('origin-dropdown').style.display = 'none';
+    },
+    () => {
+      input.value = '';
+      showToast('Could not detect your location — check location permissions.');
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
 }
 
 /* ---- REAL LIVE WEATHER FETCHER ---- */
@@ -1287,7 +1549,11 @@ window.addEventListener('click', (e) => {
 async function loadLiveCorridors() {
   try {
     const res = await fetch('/api/v1/segments').catch(() => fetch('/api/v1/segments'));
-    if (!res || !res.ok) return;
+    if (!res || !res.ok) {
+      const errHtml = '<div style="text-align:center;padding:16px;color:var(--c-crit);font-size:12px;">Unable to reach the backend — corridor data unavailable.</div>';
+      document.getElementById('desk-corridor-list').innerHTML = errHtml;
+      return;
+    }
     const segs = await res.json();
 
     if (Array.isArray(segs) && segs.length > 0) {
@@ -1322,22 +1588,34 @@ async function loadLiveCorridors() {
 
       document.getElementById('desk-corridor-list').innerHTML = htmlDesk;
       document.getElementById('mob-corridor-list').innerHTML = htmlMob;
+
+      // Upgrade the map from the static demo network to real, live-risk-colored segments
+      if (homeMap) drawPilotCorridors(segs);
     }
   } catch (e) {
-    console.warn('Using pilot corridor default cards', e);
+    console.warn('Failed to load live corridor data', e);
+    document.getElementById('desk-corridor-list').innerHTML = '<div style="text-align:center;padding:16px;color:var(--c-crit);font-size:12px;">Unable to reach the backend — corridor data unavailable.</div>';
   }
 }
 
 /* ---- REAL ROUTE SEARCH & INLINE DISPLAY ---- */
 async function findRoutes() {
-  const originInput = document.getElementById('desk-origin').value.trim() || '';
+  // No hardcoded "Guwahati" fallback — the user's typed origin, "Use Current
+  // Location" detection, or nothing at all (and we ask for one). See
+  // useCurrentLocationAsOrigin() / detectRealHomeLocation() above.
+  const originInput = originOverrideCoords || document.getElementById('desk-origin').value.trim();
   const destInput = document.getElementById('desk-dest').value.trim() || document.getElementById('mob-dest').value.trim();
   if (!destInput) {
     showToast('Please type or select a destination');
     return;
   }
+  if (!originInput) {
+    showToast('Please enter your starting point, or tap "Use Current Location".');
+    document.getElementById('desk-origin').focus();
+    return;
+  }
 
-  showToast('Analyzing safest routes via AI Engine...');
+  showToast('Analyzing real routes for hazards, weather & risk...');
 
   const key = Object.keys(DB).find(k => destInput.toLowerCase().includes(k)) || 'shillong';
   const localData = DB[key];
@@ -1346,7 +1624,7 @@ async function findRoutes() {
     const res = await fetch('/api/v1/route', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ origin: originInput || 'Guwahati', destination: destInput, priority_class: 'P2' })
+      body: JSON.stringify({ origin: originInput, destination: destInput, priority_class: 'P2' })
     }).catch(() => null);
 
     if (res && res.ok) {
@@ -1367,7 +1645,11 @@ async function findRoutes() {
             time: rt.eta_minutes ? `${Math.floor(rt.eta_minutes / 60)}h ${Math.round(rt.eta_minutes % 60)}m` : (fallback ? fallback.time : '2h 10m'),
             via: rt.name || (fallback ? fallback.via : 'Safe Highway'),
             road: 'Good NH Standard',
-            id: rt.route_id || `r-${i}`
+            id: rt.route_id || `r-${i}`,
+            // Real GraphHopper turn-by-turn + the real RoadSegment records behind
+            // this route's score — used for the nav screen, never fabricated.
+            turns: (rt.turn_instructions && rt.turn_instructions.length) ? rt.turn_instructions : null,
+            segments: (rt.segments && rt.segments.length) ? rt.segments : null
           };
         });
         renderInlineRoutes(mergedRoutes, destInput);
@@ -1431,12 +1713,76 @@ function renderInlineRoutes(routes, destName) {
   document.getElementById('desk-route-list').innerHTML = html;
   document.getElementById('mob-route-list').innerHTML = html;
 
-  // Plot route on map
-  if (sorted[0].pts && homeMap) {
-    if (routeLine) homeMap.removeLayer(routeLine);
-    routeLine = L.polyline(sorted[0].pts, { color: '#0071e3', weight: 6, opacity: 0.85, lineCap: 'round' }).addTo(homeMap);
-    homeMap.fitBounds(routeLine.getBounds(), { padding: [60, 60], maxZoom: 11 });
+  drawRoutePreview(sorted[0]);
+}
+
+// Draws the recommended route on the home map — colored per real segment risk
+// when the backend gave us segments, otherwise one flat color by overall risk.
+// Plots verified hazard reports at their real lat/lon along this specific
+// route — filtered to the road segments this route actually uses (backend
+// auto-matches each report to its nearest segment on submission, see
+// create_incident_report in backend/app/main.py), not every hazard globally.
+let routeHazardMarkers = [];
+const SEVERITY_COLOR = { Critical: '#ff3b30', High: '#ff9f0a', Medium: '#f1c40f', Low: '#34c759' };
+async function plotRouteHazards(route, map) {
+  routeHazardMarkers.forEach(m => m.setMap(null));
+  routeHazardMarkers = [];
+  if (!route.segments || !route.segments.length || !map) return;
+
+  const segmentIds = new Set(route.segments.map(s => s.segment_id));
+  try {
+    const res = await fetch('/api/v1/incidents?status=Verified');
+    if (!res.ok) return;
+    const incidents = await res.json();
+    incidents.filter(inc => segmentIds.has(inc.segment_id)).forEach(inc => {
+      const color = SEVERITY_COLOR[inc.severity] || '#ff9f0a';
+      const marker = new google.maps.Marker({
+        position: { lat: inc.lat, lng: inc.lon }, map, zIndex: 55,
+        icon: {
+          path: 'M 0,-8 L 7,6 L -7,6 Z', fillColor: color, fillOpacity: 1,
+          strokeColor: '#fff', strokeWeight: 1.5, scale: 1
+        }
+      });
+      const when = inc.timestamp ? new Date(inc.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently reported';
+      wireHoverTooltip(marker, `${inc.incident_type} · ${inc.severity}`, `${inc.notes || 'Verified field report'} — ${when}`);
+      if (inc.severity === 'Critical') pulseMarker(marker, color, 6);
+      routeHazardMarkers.push(marker);
+    });
+  } catch (e) {
+    console.warn('Failed to load route hazards', e);
   }
+}
+
+function drawRoutePreview(route) {
+  if (routeLine) { routeLine.forEach(l => l.setMap(null)); routeLine = null; }
+  if (!route.pts || route.pts.length < 2 || !homeMap) return;
+
+  const path = route.pts.map(toLatLng);
+  const lines = [];
+
+  if (route.segments && route.segments.length > 1) {
+    const chunkSize = Math.ceil(path.length / route.segments.length);
+    route.segments.forEach((seg, i) => {
+      const chunk = path.slice(i * chunkSize, Math.min(path.length, (i + 1) * chunkSize + 1));
+      if (chunk.length < 2) return;
+      const risk = seg.risk_score != null ? seg.risk_score : seg.base_risk_score;
+      const band = riskBand(risk);
+      const line = new google.maps.Polyline({ path: chunk, map: homeMap, strokeColor: band.color, strokeOpacity: 0.92, strokeWeight: 6, zIndex: 15 });
+      wirePolylineHover(line, seg.road_name || `Segment ${i + 1}`, `${seg.status || band.label} · ${Math.round(risk)}%`, 6, 9);
+      lines.push(line);
+    });
+  } else {
+    const band = riskBand(route.overall);
+    const line = new google.maps.Polyline({ path, map: homeMap, strokeColor: band.color, strokeOpacity: 0.92, strokeWeight: 6, zIndex: 15 });
+    wirePolylineHover(line, route.via, `${route.overall}% risk`, 6, 9);
+    lines.push(line);
+  }
+  routeLine = lines;
+  plotRouteHazards(route, homeMap);
+
+  const bounds = new google.maps.LatLngBounds();
+  path.forEach(p => bounds.extend(p));
+  homeMap.fitBounds(bounds, 60);
 }
 
 function clearRoutes() {
@@ -1447,11 +1793,9 @@ function clearRoutes() {
   document.getElementById('mob-corridor-view').style.display = 'block';
   document.getElementById('mob-route-view').style.display = 'none';
 
-  if (routeLine && homeMap) {
-    homeMap.removeLayer(routeLine);
-    routeLine = null;
-  }
-  homeMap.setView([25.9, 91.9], 9);
+  if (routeLine) { routeLine.forEach(l => l.setMap(null)); routeLine = null; }
+  routeHazardMarkers.forEach(m => m.setMap(null)); routeHazardMarkers = [];
+  if (homeMap) { homeMap.setCenter({ lat: 25.9, lng: 91.9 }); homeMap.setZoom(9); }
 }
 
 function quickDest(dest) {
@@ -1460,20 +1804,27 @@ function quickDest(dest) {
   findRoutes();
 }
 
-/* ---- GOOGLE MAPS STYLE LIVE TURN-BY-TURN NAVIGATION ---- */
+/* =============================================================
+   LIVE TURN-BY-TURN NAVIGATION — Google Maps surface, real GraphHopper
+   route geometry + turn instructions + segment risk (never Google's own
+   Directions/routing). The truck marker runs a simulated pass along the
+   real route geometry so the animation is always visible in a demo/testing
+   setting; the device's actual GPS (when granted) is shown as a separate
+   "you are here" dot and never substitutes for or edits the drawn route.
+============================================================= */
 let navWatchId = null;
 let navCurrentRoute = null;
 let navVoiceEnabled = true;
+let navRiskLines = [];
+let navTruckMarker = null, navUserDot = null, navStartMarker = null, navDestMarker = null;
+let navAnimHandle = null;
+let navTotalDistanceKm = 0;
 
 function toggleNavVoice() {
   navVoiceEnabled = !navVoiceEnabled;
   const btn = document.getElementById('nav-voice-btn');
-  if (navVoiceEnabled) {
-    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-    speakVoice("Voice navigation enabled");
-  } else {
-    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
-  }
+  btn.style.opacity = navVoiceEnabled ? '1' : '0.4';
+  if (navVoiceEnabled) speakVoice('Voice navigation enabled');
 }
 
 function speakVoice(text) {
@@ -1483,217 +1834,173 @@ function speakVoice(text) {
   window.speechSynthesis.speak(u);
 }
 
+function stopNavAnimation() {
+  if (navAnimHandle) { cancelAnimationFrame(navAnimHandle); navAnimHandle = null; }
+}
+
 function startNav(r) {
   switchScreen('nav');
   navCurrentRoute = r;
+  navTotalDistanceKm = parseFloat(r.dist) || 0;
+  stopNavAnimation();
 
-  // Init Map
   if (!navMap) {
-    navMap = L.map('nav-map', { zoomControl: false }).setView([pos.lat, pos.lon], 16);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(navMap);
+    navMap = new google.maps.Map(document.getElementById('nav-map'), {
+      center: toLatLng(r.pts[0] || [pos.lat, pos.lon]), zoom: 14,
+      disableDefaultUI: true, styles: MAP_STYLE
+    });
+  }
+  navRiskLines.forEach(l => l.setMap(null)); navRiskLines = [];
+  [navTruckMarker, navStartMarker, navDestMarker].forEach(m => m && m.setMap(null));
+  document.getElementById('nav-hazard-banner').style.display = 'none';
+
+  // Risk badge + bottom stats — real values from the selected route
+  const band = riskBand(r.overall);
+  const badgeBg = { '#34c759': 'var(--c-safe-soft)', '#ff9f0a': 'var(--c-warn-soft)', '#ff3b30': 'var(--c-crit-soft)' }[band.color];
+  const badge = document.getElementById('ns-risk-badge');
+  badge.textContent = `Risk ${r.overall}% · ${band.label}`;
+  badge.style.background = badgeBg;
+  badge.style.color = band.color;
+  document.getElementById('ns-risk').textContent = r.overall + '%';
+  document.getElementById('ns-risk').style.color = band.color;
+  document.getElementById('ns-eta').textContent = r.time;
+  document.getElementById('ns-dist').textContent = r.dist;
+
+  const path = (r.pts && r.pts.length > 1) ? r.pts.map(toLatLng) : [toLatLng([pos.lat, pos.lon]), toLatLng([pos.lat, pos.lon])];
+
+  // Draw the real route, colored per real segment risk where the backend gave us segments
+  if (r.segments && r.segments.length > 1) {
+    const chunkSize = Math.ceil(path.length / r.segments.length);
+    r.segments.forEach((seg, i) => {
+      const chunk = path.slice(i * chunkSize, Math.min(path.length, (i + 1) * chunkSize + 1));
+      if (chunk.length < 2) return;
+      const risk = seg.risk_score != null ? seg.risk_score : seg.base_risk_score;
+      const b = riskBand(risk);
+      const line = new google.maps.Polyline({ path: chunk, map: navMap, strokeColor: b.color, strokeOpacity: 0.92, strokeWeight: 8, zIndex: 5 });
+      line.addListener('click', (e) => showSegmentRiskInfo(seg.segment_id, e.latLng, navMap));
+      wirePolylineHover(line, seg.road_name || 'Route segment', `${seg.status || b.label} · ${Math.round(risk)}% — click for weather & report details`, 8, 11);
+      navRiskLines.push(line);
+    });
   } else {
-    setTimeout(() => navMap.invalidateSize(), 150);
+    const line = new google.maps.Polyline({ path, map: navMap, strokeColor: band.color, strokeOpacity: 0.92, strokeWeight: 8, zIndex: 5 });
+    wirePolylineHover(line, r.via, `${r.overall}% risk`, 8, 11);
+    navRiskLines.push(line);
   }
 
-  // Clear previous route
-  if (navRoutingControl) {
-    navMap.removeControl(navRoutingControl);
-    navRoutingControl = null;
-  }
+  navStartMarker = new google.maps.Marker({ position: path[0], map: navMap, zIndex: 20, icon: markerIcon('#0071e3', 7) });
+  navDestMarker = new google.maps.Marker({ position: path[path.length - 1], map: navMap, zIndex: 20 });
+  plotRouteHazards(r, navMap);
 
-  // Populate NER SafeRoute intelligence from the chosen route
-  const rEmoji = r.overall <= 30 ? '🟢' : (r.overall <= 60 ? '🟡' : '🔴');
-  document.getElementById('ns-risk-badge').textContent = `Overall Risk: ${r.overall}% ${rEmoji}`;
-  const badgeColor = r.overall <= 30 ? 'var(--c-safe)' : (r.overall <= 60 ? 'var(--c-warn)' : 'var(--c-crit)');
-  const badgeBg = r.overall <= 30 ? 'var(--c-safe-soft)' : (r.overall <= 60 ? 'var(--c-warn-soft)' : 'var(--c-crit-soft)');
-  document.getElementById('ns-risk-badge').style.color = badgeColor;
-  document.getElementById('ns-risk-badge').style.background = badgeBg;
-  
-  if (r.overall > 60) {
-    document.getElementById('ns-ai-insight').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> High hazard probability on this route. Drive carefully.`;
-    document.getElementById('ns-ai-insight').style.color = 'var(--c-crit)';
-  } else {
-    document.getElementById('ns-ai-insight').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Safest calculated segment ahead.`;
-    document.getElementById('ns-ai-insight').style.color = 'var(--c-safe)';
-  }
-
-  // Setup Routing Control (OSRM)
-  const startPt = r.pts[0];
-  const endPt = r.pts[r.pts.length - 1];
-  
-  navRoutingControl = L.Routing.control({
-    waypoints: [L.latLng(startPt[0], startPt[1]), L.latLng(endPt[0], endPt[1])],
-    routeWhileDragging: false,
-    addWaypoints: false,
-    showAlternatives: false,
-    fitSelectedRoutes: true,
-    // Hide default line, we will draw segmented risk lines
-    routeLine: function(route) { return L.polyline([], {weight:0}); },
-    createMarker: function(i, wp, n) {
-      if (i===0) { // user marker
-        return L.circleMarker(wp.latLng, { radius:8, fillColor:'#0071e3', color:'#fff', weight:3, fillOpacity:1 });
-      } else if (i===n-1) { // destination
-        return L.marker(wp.latLng);
-      }
-      return null;
-    }
-  }).addTo(navMap);
-
-  // Hook into routing events to update directions
-  navRoutingControl.on('routesfound', function(e) {
-    const routes = e.routes;
-    const summary = routes[0].summary;
-    
-    // Update bottom stats
-    document.getElementById('ns-dist').textContent = (summary.totalDistance / 1000).toFixed(1) + ' km';
-    const totalMin = Math.round(summary.totalTime / 60);
-    document.getElementById('ns-time').textContent = totalMin + ' min';
-    
-    const arrival = new Date(Date.now() + summary.totalTime * 1000);
-    document.getElementById('ns-eta').textContent = arrival.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-    // Initial direction
-    if (routes[0].instructions && routes[0].instructions.length > 0) {
-      const inst = routes[0].instructions[0];
-      document.getElementById('nav-road-txt').textContent = inst.road || 'Proceed to route';
-      document.getElementById('nav-dist-txt').textContent = inst.text;
-      if (isFirstRouteLoad) { speakVoice(inst.text); isFirstRouteLoad = false; }
-    }
-    
-    // DRAW RISK-COLORED SEGMENTS
-    if (window.navRiskLayers) {
-      window.navRiskLayers.forEach(l => navMap.removeLayer(l));
-    }
-    window.navRiskLayers = [];
-    
-    const coords = routes[0].coordinates;
-    const segments = 4;
-    const chunkSize = Math.floor(coords.length / segments);
-    
-    for (let i = 0; i < segments; i++) {
-      const chunk = coords.slice(i * chunkSize, (i===segments-1) ? coords.length : (i+1)*chunkSize + 1);
-      
-      // Determine segment risk dynamically
-      let color = '#34c759'; // Green 0-30%
-      let riskVal = Math.floor(Math.random() * 25) + 5;
-      let reason = 'Safe segment';
-      
-      if (navCurrentRoute.overall > 60 && i === 2) {
-        color = '#ff3b30'; // Red 81-100%
-        riskVal = Math.floor(Math.random() * 15) + 81;
-        reason = 'Heavy rainfall, steep terrain, previous landslides';
-      } else if (navCurrentRoute.overall > 40 && i === 1) {
-        color = '#ff9f0a'; // Orange 61-80%
-        riskVal = Math.floor(Math.random() * 20) + 61;
-        reason = 'Moderate flood risk due to river overflow';
-      } else if (navCurrentRoute.overall > 20 && i === 3) {
-        color = '#f1c40f'; // Yellow 31-60%
-        riskVal = Math.floor(Math.random() * 30) + 31;
-        reason = 'Wet road conditions';
-      }
-
-      const pl = L.polyline(chunk, { color: color, weight: 8, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(navMap);
-      
-      // Hazard Information on Tap
-      if (riskVal > 30) {
-        pl.bindPopup(`
-          <div style="font-family:-apple-system,sans-serif;padding:4px;">
-            <div style="font-size:10px;font-weight:700;color:var(--c-text-3);margin-bottom:2px;">WHY IS THIS AREA RISKY?</div>
-            <div style="font-weight:600;font-size:13px;color:var(--c-text);line-height:1.4;">${reason}</div>
-            <div style="margin-top:6px;font-size:12px;font-weight:700;color:${color};">Risk: ${riskVal}%</div>
-          </div>
-        `);
-      }
-      window.navRiskLayers.push(pl);
+  // Animated truck marker — a small filled cab+body shape matching the
+  // driver-role icon used elsewhere in the app, oriented along the route.
+  navTruckMarker = new google.maps.Marker({
+    position: path[0], map: navMap, zIndex: 45,
+    icon: {
+      path: 'M -9,-4 L 2,-4 L 2,4 L -9,4 Z M 2,-2 L 6,-2 L 9,1 L 9,4 L 2,4 Z',
+      fillColor: '#0071e3', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1.5,
+      scale: 1.7, rotation: 0
     }
   });
 
-  // Start live GPS tracking
+  const bounds = new google.maps.LatLngBounds();
+  path.forEach(p => bounds.extend(p));
+  navMap.fitBounds(bounds, 70);
+
+  const instructions = (r.turns && r.turns.length) ? r.turns : [{ text: `Continue toward ${r.via || 'destination'}`, distance_m: navTotalDistanceKm * 1000 }];
+  document.getElementById('nav-road-txt').textContent = instructions[0].text;
+  document.getElementById('nav-dist-txt').textContent = r.dist;
+  speakVoice(instructions[0].text);
+
+  let lastStep = 0;
+  let crossedHighRisk = false;
+  const durationMs = 42000;
+  const startTime = performance.now();
+
+  function animate(now) {
+    const progress = Math.min(1, (now - startTime) / durationMs);
+    const segCount = path.length - 1;
+    const along = progress * segCount;
+    const idx = Math.min(segCount - 1, Math.floor(along));
+    const frac = along - idx;
+    const from = path[idx], to = path[Math.min(path.length - 1, idx + 1)];
+    const heading = google.maps.geometry.spherical.computeHeading(from, to);
+    const truckPos = google.maps.geometry.spherical.interpolate(from, to, frac);
+
+    navTruckMarker.setPosition(truckPos);
+    const icon = navTruckMarker.getIcon();
+    navTruckMarker.setIcon(Object.assign({}, icon, { rotation: heading - 90 }));
+
+    const stepIdx = Math.min(instructions.length - 1, Math.floor(progress * instructions.length));
+    if (stepIdx !== lastStep || progress === 0) {
+      lastStep = stepIdx;
+      document.getElementById('nav-road-txt').textContent = instructions[stepIdx].text;
+      if (stepIdx > 0) speakVoice(instructions[stepIdx].text);
+    }
+    document.getElementById('ns-dist').textContent = Math.max(0, navTotalDistanceKm * (1 - progress)).toFixed(1) + ' km';
+
+    // Real hazard banner — trips when the truck's simulated position enters
+    // a genuinely high-risk segment, using that segment's real fields.
+    if (r.segments && r.segments.length > 1) {
+      const segIdx = Math.min(r.segments.length - 1, Math.floor(progress * r.segments.length));
+      const seg = r.segments[segIdx];
+      const risk = seg.risk_score != null ? seg.risk_score : seg.base_risk_score;
+      if (riskBand(risk).label === 'High Risk') {
+        if (!crossedHighRisk) {
+          crossedHighRisk = true;
+          document.getElementById('nav-hazard-text').textContent = `${seg.road_name || 'This segment'} — ${seg.status || 'high risk'}. Reduce speed.`;
+          document.getElementById('nav-hazard-banner').style.display = 'flex';
+          speakVoice('Warning. Entering a high risk segment ahead.');
+        }
+      } else if (crossedHighRisk) {
+        crossedHighRisk = false;
+        document.getElementById('nav-hazard-banner').style.display = 'none';
+      }
+    }
+
+    if (progress < 1) {
+      navAnimHandle = requestAnimationFrame(animate);
+    } else {
+      speakVoice('You have arrived at your destination.');
+    }
+  }
+  navAnimHandle = requestAnimationFrame(animate);
+
+  // Real device GPS, shown as a separate "you are here" dot — recenters the
+  // view but never overrides the drawn route or the simulated truck.
   if (navigator.geolocation) {
     navWatchId = navigator.geolocation.watchPosition(
-      (posUpdate) => {
-        const lat = posUpdate.coords.latitude;
-        const lon = posUpdate.coords.longitude;
-        // Update user marker (waypoint 0)
-        const currentWps = navRoutingControl.getWaypoints();
-        currentWps[0] = L.latLng(lat, lon);
-        navRoutingControl.setWaypoints(currentWps); // Triggers recalculation dynamically if moved
-        navMap.setView([lat, lon], 17, { animate: true });
-        
-        // Dynamic Safer Route trigger in demo mode
-        if (r.overall > 60 && Math.random() > 0.85 && document.getElementById('nav-safer-popup').style.display === 'none') {
-          document.getElementById('nav-safer-popup').style.display = 'block';
-          speakVoice("A safer route is available. Tap to accept.");
-        } else if (r.overall > 30 && r.overall <= 60 && Math.random() > 0.9) {
-          showNavHazardWarning();
+      (p) => {
+        const here = { lat: p.coords.latitude, lng: p.coords.longitude };
+        if (!navUserDot) {
+          navUserDot = new google.maps.Marker({
+            position: here, map: navMap, zIndex: 30,
+            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: '#ffffff', fillOpacity: 1, strokeColor: '#0071e3', strokeWeight: 3 },
+            title: 'Your device location'
+          });
+          wireHoverTooltip(navUserDot, 'You are here', '');
+        } else {
+          navUserDot.setPosition(here);
         }
       },
       (err) => console.warn('GPS watch error', err),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
     );
   }
 }
 
-
-let isFirstRouteLoad = true;
-function toggleNavCard() {
-  const el = document.getElementById('ns-card-details');
-  const chev = document.getElementById('ns-card-chev');
-  if (el.style.display === 'none') {
-    el.style.display = 'block';
-    chev.style.transform = 'rotate(180deg)';
-  } else {
-    el.style.display = 'none';
-    chev.style.transform = 'rotate(0deg)';
-  }
-}
-
-function acceptSaferRoute() {
-  document.getElementById('nav-safer-popup').style.display='none';
-  speakVoice("Rerouting to safer alternative route.");
-  // Simulate picking the safer route
-  navCurrentRoute.overall = 21;
-  document.getElementById('ns-risk-badge').textContent = 'Overall Risk: 21% 🟢';
-  document.getElementById('ns-risk-badge').style.background = 'var(--c-safe-soft)';
-  document.getElementById('ns-risk-badge').style.color = 'var(--c-safe)';
-  document.getElementById('ns-ai-insight').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Safest practical route calculated.`;
-  document.getElementById('ns-ai-insight').style.color = 'var(--c-safe)';
-  // Force map update
-  if (navRoutingControl) {
-    const wps = navRoutingControl.getWaypoints();
-    navRoutingControl.setWaypoints([wps[0], wps[wps.length-1]]);
-  }
-}
-
-// Inside the GPS watch interval, simulate Safer Route popup if risk is high
-// This replaces the old random hazard logic for better demonstration
-
-function showNavHazardWarning() {
-  const el = document.getElementById('nav-hazard-warning');
-  if (el.style.display === 'none') {
-    el.style.display = 'block';
-    speakVoice("Warning. Potential hazard detected ahead.");
-    setTimeout(() => el.style.display = 'none', 8000);
-  }
-}
-
 function recenterNavMap() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(p => {
-      navMap.setView([p.coords.latitude, p.coords.longitude], 17, { animate: true });
-    });
-  }
+  if (!navMap) return;
+  if (navUserDot) { navMap.panTo(navUserDot.getPosition()); navMap.setZoom(15); }
+  else if (navTruckMarker) { navMap.panTo(navTruckMarker.getPosition()); }
 }
 
 function endNav() {
+  stopNavAnimation();
   if (navWatchId !== null) {
     navigator.geolocation.clearWatch(navWatchId);
     navWatchId = null;
   }
-  if (navRoutingControl && navMap) {
-    navMap.removeControl(navRoutingControl);
-    navRoutingControl = null;
-  }
+  routeHazardMarkers.forEach(m => m.setMap(null)); routeHazardMarkers = [];
   const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='';
   switchScreen('home');
 }
@@ -1708,6 +2015,7 @@ let supabaseClient = null;
 let currentAdminSession = null;
 let currentAdminTab = 'Pending';
 let allAdminIncidents = [];
+let currentSessionRole = null; // resolved once at startup — see applyRoleBasedUI()
 let authMode = 'signin'; // 'signin' or 'signup'
 
 try {
@@ -1810,22 +2118,27 @@ async function handleAdminAuth() {
     if (!supabaseClient) throw new Error("Supabase SDK not loaded. Check internet connection.");
 
     if (authMode === 'signup') {
-      const org = document.getElementById('admin-auth-org').value.trim() || 'Highway Authority';
-      const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password,
-        options: { data: { organization: org } }
-      });
-      if (error) throw error;
-      if (data.session) {
-        currentAdminSession = data.session;
-        showToast('Admin registered and logged in successfully!');
-        updateAdminAuthUI();
-        loadAdminIncidents();
-      } else {
-        showToast('Registration successful! You can now sign in.');
-        switchAuthTab('signin');
+      const inviteCode = document.getElementById('admin-auth-invite').value.trim();
+      if (!inviteCode) {
+        throw new Error('An invite code is required to register an officer account.');
       }
+      // Officer accounts are created server-side with role set in app_metadata
+      // (not client-editable user_metadata) — see backend/app/services/auth_service.py
+      const reg = await fetch('/api/v1/auth/register-officer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, invite_code: inviteCode })
+      });
+      if (!reg.ok) {
+        const err = await reg.json().catch(() => ({}));
+        throw new Error(err.detail || 'Registration failed.');
+      }
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      currentAdminSession = data.session;
+      showToast('Admin registered and logged in successfully!');
+      updateAdminAuthUI();
+      loadAdminIncidents();
     } else {
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email: email,
@@ -1846,6 +2159,72 @@ async function handleAdminAuth() {
   }
 }
 
+/* =============================================================
+   DRIVER GPS LOCATION SHARING — driver-role sessions only.
+   Posts throttled pings to /api/v1/driver/location, which is visible
+   to officer/admin sessions only (see backend/app/main.py).
+============================================================= */
+let driverWatchId = null;
+
+async function initDriverLocationSharing() {
+  if (!supabaseClient && window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+  }
+  if (!supabaseClient || !navigator.geolocation) return;
+
+  const { data } = await supabaseClient.auth.getSession();
+  const session = data ? data.session : null;
+  // Guest / not-signed-in driver mode has nothing to authenticate a ping with
+  if (!session || !session.user) return;
+  const role = (session.user.app_metadata || {}).role;
+  if (role !== 'driver') return;
+
+  setDriverSharingBadge('active');
+
+  let lastSentAt = 0;
+  driverWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const now = Date.now();
+      if (now - lastSentAt < 10000) return; // throttle to 1 ping / 10s
+      lastSentAt = now;
+      fetch('/api/v1/driver/location', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.access_token
+        },
+        body: JSON.stringify({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          speed_kmh: pos.coords.speed ? Math.max(0, pos.coords.speed * 3.6) : 0,
+          heading: pos.coords.heading || 0
+        })
+      }).catch(() => {});
+    },
+    () => setDriverSharingBadge('error'),
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+function setDriverSharingBadge(state) {
+  let badge = document.getElementById('driver-sharing-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'driver-sharing-badge';
+    badge.style.cssText = 'position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:1000;font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,0.15);pointer-events:none;letter-spacing:0.2px;';
+    document.body.appendChild(badge);
+  }
+  if (state === 'error') {
+    badge.style.background = '#fff3f2';
+    badge.style.color = '#ff3b30';
+    badge.textContent = '⚠️ Location sharing unavailable — enable GPS permission';
+  } else {
+    badge.style.background = '#eafaf0';
+    badge.style.color = '#1f9d4b';
+    badge.textContent = '🟢 Location Sharing Active';
+  }
+}
+
 async function handleAdminSignOut() {
   if (supabaseClient) {
     await supabaseClient.auth.signOut();
@@ -1857,7 +2236,7 @@ async function handleAdminSignOut() {
 
 function switchAdminTab(tab) {
   currentAdminTab = tab;
-  ['Pending', 'Verified', 'Rejected'].forEach(t => {
+  ['Pending', 'Verified', 'Rejected', 'Resolved', 'Drivers'].forEach(t => {
     const btn = document.getElementById('tab-btn-' + t);
     if (btn) {
       if (t === tab) {
@@ -1871,7 +2250,131 @@ function switchAdminTab(tab) {
       }
     }
   });
-  renderAdminList();
+
+  const incidentsEl = document.getElementById('admin-incidents-list');
+  const driversEl = document.getElementById('admin-drivers-list');
+  if (tab === 'Drivers') {
+    if (incidentsEl) incidentsEl.style.display = 'none';
+    if (driversEl) driversEl.style.display = 'block';
+    loadAdminDrivers();
+  } else {
+    if (incidentsEl) incidentsEl.style.display = '';
+    if (driversEl) driversEl.style.display = 'none';
+    renderAdminList();
+  }
+}
+
+/* ---- OFFICER-ONLY LIVE DRIVER TRACKING (see require_role("officer") on the backend) ---- */
+let driversMap = null;
+let driverMarkers = {};
+
+async function loadAdminDrivers() {
+  await checkAdminSession();
+  if (!currentAdminSession) {
+    updateAdminAuthUI();
+    return;
+  }
+
+  const listEl = document.getElementById('admin-drivers-cards');
+  if (listEl && !listEl.innerHTML) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-text-2);">Loading live driver locations...</div>';
+  }
+
+  try {
+    const res = await fetch('/api/v1/officer/drivers', {
+      headers: { 'Authorization': 'Bearer ' + currentAdminSession.access_token }
+    });
+    if (res.status === 403) {
+      if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-text-2);">This account does not have officer permissions to view live driver locations.</div>';
+      return;
+    }
+    if (!res.ok) throw new Error('API error');
+    const drivers = await res.json();
+    renderDriversMap(drivers);
+    renderDriversList(drivers);
+  } catch (err) {
+    console.warn('Failed to load live drivers:', err);
+    if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--c-crit);">Unable to load live driver locations from backend API.</div>';
+  }
+}
+
+// Smoothly glides a marker between two positions instead of jump-cutting on
+// each poll — makes the officer's live fleet view read as actually "live".
+function animateMarkerTo(marker, from, to, durationMs) {
+  const start = performance.now();
+  (function step(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    marker.setPosition({ lat: from.lat + (to.lat - from.lat) * t, lng: from.lng + (to.lng - from.lng) * t });
+    if (t < 1) requestAnimationFrame(step);
+  })(start);
+}
+
+function renderDriversMap(drivers) {
+  const mapEl = document.getElementById('admin-drivers-map');
+  if (!mapEl || typeof google === 'undefined' || !google.maps) return;
+
+  if (!driversMap) {
+    driversMap = new google.maps.Map(mapEl, {
+      center: { lat: 25.9, lng: 91.9 }, zoom: 8,
+      disableDefaultUI: true, zoomControl: true, styles: MAP_STYLE
+    });
+  }
+
+  const seen = new Set();
+  drivers.filter(d => d.lat != null && d.lon != null).forEach(d => {
+    seen.add(d.driver_code);
+    const color = d.is_online ? '#34c759' : '#86868b';
+    const target = { lat: d.lat, lng: d.lon };
+    const sub = `${d.email || 'No email on file'}${d.speed_kmh != null ? ' · ' + Math.round(d.speed_kmh) + ' km/h' : ''} · ${d.is_online ? 'Online' : 'Offline'}`;
+    const entry = driverMarkers[d.driver_code];
+
+    if (!entry) {
+      const marker = new google.maps.Marker({ position: target, map: driversMap, zIndex: d.is_online ? 40 : 10, icon: markerIcon(color, 8) });
+      wireMarkerHover(marker, d.driver_code, sub, color, 8, 10);
+      driverMarkers[d.driver_code] = { marker, pos: target, color };
+      if (d.is_online) pulseMarker(marker, color, 8);
+    } else {
+      if (entry.pos.lat !== target.lat || entry.pos.lng !== target.lng) {
+        animateMarkerTo(entry.marker, entry.pos, target, 900);
+      }
+      entry.pos = target;
+      if (entry.color !== color) {
+        entry.color = color;
+        entry.marker.setIcon(markerIcon(color, 8));
+        if (d.is_online) pulseMarker(entry.marker, color, 8);
+      }
+    }
+  });
+
+  Object.keys(driverMarkers).forEach(code => {
+    if (!seen.has(code)) { driverMarkers[code].marker.setMap(null); delete driverMarkers[code]; }
+  });
+}
+
+function renderDriversList(drivers) {
+  const listEl = document.getElementById('admin-drivers-cards');
+  if (!listEl) return;
+
+  if (!drivers.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px 20px;background:#ffffff;border:1px dashed var(--c-border);border-radius:var(--r-md);color:var(--c-text-2);">No registered drivers yet.</div>';
+    return;
+  }
+
+  listEl.innerHTML = drivers.map(d => {
+    const statusColor = d.is_online ? 'var(--c-safe)' : 'var(--c-text-2)';
+    const statusBg = d.is_online ? 'var(--c-safe-soft)' : 'rgba(0,0,0,0.06)';
+    const lastSeen = d.last_updated ? new Date(d.last_updated).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Never';
+    return `
+      <div style="background:#ffffff;border:1px solid var(--c-border);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--c-text);">${d.driver_code}</div>
+          <div style="font-size:11.5px;color:var(--c-text-2);margin-top:2px;">${d.email || 'No email on file'} &middot; Last seen ${lastSeen}</div>
+        </div>
+        <span style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:var(--r-pill);background:${statusBg};color:${statusColor};white-space:nowrap;">
+          ${d.is_online ? 'Online' : 'Offline'}
+        </span>
+      </div>`;
+  }).join('');
 }
 
 async function updateAdminBadgeCount() {
@@ -1908,13 +2411,16 @@ async function loadAdminIncidents() {
     const pCnt = allAdminIncidents.filter(i => i.status === 'Pending').length;
     const vCnt = allAdminIncidents.filter(i => i.status === 'Verified').length;
     const rCnt = allAdminIncidents.filter(i => i.status === 'Rejected').length;
+    const resCnt = allAdminIncidents.filter(i => i.status === 'Resolved').length;
 
     const tp = document.getElementById('tab-cnt-Pending');
     const tv = document.getElementById('tab-cnt-Verified');
     const tr = document.getElementById('tab-cnt-Rejected');
+    const tres = document.getElementById('tab-cnt-Resolved');
     if (tp) tp.textContent = pCnt;
     if (tv) tv.textContent = vCnt;
     if (tr) tr.textContent = rCnt;
+    if (tres) tres.textContent = resCnt;
 
     updateAdminBadgeCount();
     renderAdminList();
@@ -1933,9 +2439,13 @@ function renderAdminList() {
   const filtered = allAdminIncidents.filter(i => (i.status || 'Pending') === currentAdminTab);
 
   if (!filtered.length) {
-    const msg = currentAdminTab === 'Pending' 
-      ? 'No hazard reports currently pending administrator authorization.'
-      : (currentAdminTab === 'Verified' ? 'No active verified hazards recorded.' : 'No rejected reports.');
+    const emptyMessages = {
+      Pending: 'No hazard reports currently pending administrator authorization.',
+      Verified: 'No active verified hazards recorded.',
+      Rejected: 'No rejected reports.',
+      Resolved: 'No resolved hazards yet.'
+    };
+    const msg = emptyMessages[currentAdminTab] || 'No reports in this category.';
     listEl.innerHTML = `
       <div style="text-align:center;padding:40px 20px;background:#ffffff;border:1px dashed var(--c-border);border-radius:var(--r-md);color:var(--c-text-2);margin-top:10px;">
         <div style="font-weight:600;font-size:14px;color:var(--c-text);margin-bottom:4px;">${msg}</div>
@@ -1944,9 +2454,17 @@ function renderAdminList() {
     return;
   }
 
+  const statusMeta = {
+    Pending: { label: 'Pending Admin Authorization', bg: 'rgba(255,159,10,0.12)', color: 'var(--c-warn)' },
+    Verified: { label: 'Verified & Broadcasting Live', bg: 'var(--c-safe-soft)', color: 'var(--c-safe)' },
+    Rejected: { label: 'Rejected', bg: 'rgba(0,0,0,0.06)', color: 'var(--c-text-2)' },
+    Resolved: { label: 'Resolved & Cleared', bg: 'rgba(0,113,227,0.1)', color: 'var(--c-primary)' }
+  };
+
   listEl.innerHTML = filtered.map(inc => {
     const isPending = inc.status === 'Pending';
     const isVerified = inc.status === 'Verified';
+    const meta = statusMeta[inc.status] || statusMeta.Pending;
     const sev = (inc.severity || 'High').toLowerCase();
     const sevColor = sev === 'critical' ? 'var(--c-crit)' : (sev === 'high' ? 'var(--c-warn)' : 'var(--c-safe)');
     const sevBg = sev === 'critical' ? 'var(--c-crit-soft)' : (sev === 'high' ? 'var(--c-warn-soft)' : 'var(--c-safe-soft)');
@@ -1962,8 +2480,8 @@ function renderAdminList() {
             </div>
             <div style="font-size:11.5px;color:var(--c-text-3);margin-top:2px;">ID: ${inc.incident_id || inc.id} · ${timeStr}</div>
           </div>
-          <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:var(--r-pill);background:${isPending ? 'rgba(255,159,10,0.12)' : (isVerified ? 'var(--c-safe-soft)' : 'rgba(0,0,0,0.06)')};color:${isPending ? 'var(--c-warn)' : (isVerified ? 'var(--c-safe)' : 'var(--c-text-2)')};">
-            ${isPending ? 'Pending Admin Authorization' : (isVerified ? 'Verified & Broadcasting Live' : 'Rejected')}
+          <span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:var(--r-pill);background:${meta.bg};color:${meta.color};white-space:nowrap;">
+            ${meta.label}
           </span>
         </div>
 
@@ -1972,8 +2490,9 @@ function renderAdminList() {
         </div>
 
         <div style="font-size:11.5px;color:var(--c-text-2);display:flex;gap:12px;flex-wrap:wrap;">
+          <span><b>Reported by:</b> ${inc.reporter || 'Citizen / Field Reporter'}</span>
           <span><b>Highway Segment:</b> ${inc.segment_id || 'NH-6 Corridor'}</span>
-          <span><b>Coordinates:</b> ${inc.latitude ? Number(inc.latitude).toFixed(4) : '26.1445'}° N, ${inc.longitude ? Number(inc.longitude).toFixed(4) : '91.7362'}° E</span>
+          <span><b>Coordinates:</b> ${inc.lat != null ? Number(inc.lat).toFixed(4) : '26.1445'}° N, ${inc.lon != null ? Number(inc.lon).toFixed(4) : '91.7362'}° E</span>
         </div>
 
         ${isPending ? `
@@ -1985,6 +2504,14 @@ function renderAdminList() {
             <button onclick="rejectIncident('${inc.incident_id || inc.id}')" style="padding:9px 16px;background:rgba(0,0,0,0.05);color:var(--c-crit);border-radius:8px;font-size:12.5px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               <span>Dismiss</span>
+            </button>
+          </div>
+        ` : ''}
+        ${isVerified ? `
+          <div style="display:flex;gap:10px;margin-top:4px;border-top:1px solid var(--c-border);padding-top:10px;">
+            <button onclick="resolveIncident('${inc.incident_id || inc.id}')" style="flex:1;padding:9px;background:var(--c-primary);color:#fff;border-radius:8px;font-size:12.5px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Mark Resolved / Cleared</span>
             </button>
           </div>
         ` : ''}
@@ -2001,7 +2528,7 @@ async function approveIncident(id) {
 
   showToast('Authenticating with Supabase & broadcasting alert...');
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/v1/incidents/${id}/approve`, {
+    const res = await fetch(`/api/v1/incidents/${id}/approve`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + currentAdminSession.access_token
@@ -2015,6 +2542,8 @@ async function approveIncident(id) {
     } else if (res.status === 401) {
       showToast('Unauthorized: Only registered administrators can approve.');
       await handleAdminSignOut();
+    } else if (res.status === 403) {
+      showToast('This account does not have officer permissions.');
     } else {
       const err = await res.json().catch(() => ({}));
       showToast(err.detail || 'Failed to approve hazard.');
@@ -2033,7 +2562,7 @@ async function rejectIncident(id) {
 
   showToast('Dismissing hazard report...');
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/v1/incidents/${id}/reject`, {
+    const res = await fetch(`/api/v1/incidents/${id}/reject`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + currentAdminSession.access_token
@@ -2046,6 +2575,44 @@ async function rejectIncident(id) {
     } else if (res.status === 401) {
       showToast('Unauthorized: Administrator authentication required.');
       await handleAdminSignOut();
+    } else if (res.status === 403) {
+      showToast('This account does not have officer permissions.');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.detail || 'Failed to dismiss report.');
+    }
+  } catch (e) {
+    showToast('Connection error connecting to backend.');
+  }
+}
+
+async function resolveIncident(id) {
+  if (!currentAdminSession || !currentAdminSession.access_token) {
+    showToast('Administrator session required. Please sign in.');
+    updateAdminAuthUI();
+    return;
+  }
+
+  showToast('Marking hazard as resolved...');
+  try {
+    const res = await fetch(`/api/v1/incidents/${id}/resolve`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + currentAdminSession.access_token
+      }
+    });
+
+    if (res.ok) {
+      showToast('Hazard marked resolved.');
+      await loadAdminIncidents();
+    } else if (res.status === 401) {
+      showToast('Unauthorized: Administrator authentication required.');
+      await handleAdminSignOut();
+    } else if (res.status === 403) {
+      showToast('This account does not have officer permissions.');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.detail || 'Failed to resolve hazard.');
     }
   } catch (e) {
     showToast('Connection error connecting to backend.');
@@ -2172,10 +2739,25 @@ async function submitReport() {
   const lat = reportLat || pos.lat;
   const lon = reportLon || pos.lon;
   showToast('Submitting verified report with GPS coordinates...');
+
+  // If signed in, the backend derives the real reporter identity from the
+  // token instead of this free-text fallback (see get_optional_user in
+  // backend/app/services/auth_service.py) — anonymous reporting still works.
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    if (!supabaseClient && window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+    }
+    if (supabaseClient) {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data && data.session) headers['Authorization'] = 'Bearer ' + data.session.access_token;
+    }
+  } catch (e) {}
+
   try {
     await fetch('/api/v1/incidents', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         incident_type: selHazard,
         severity: 'High',
@@ -2223,6 +2805,60 @@ function toggleLang() {
   showToast(`Language switched to ${currentLanguage}`);
 }
 
+/* ---- ROLE-RESTRICTED UI (Phase 5) ----
+   Resolves the real signed-in role once at startup and uses it — not CSS
+   alone — to decide what's shown. Nothing here replaces the server-side
+   require_role() checks (approve/reject/resolve, driver location, officer
+   drivers list all still enforce it); this only keeps the UI honest about
+   who's actually signed in. */
+function showDriverModeBadge() {
+  if (document.getElementById('driver-mode-badge')) return;
+  const badge = document.createElement('div');
+  badge.id = 'driver-mode-badge';
+  badge.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1000;background:#34c759;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(52,199,89,0.4);pointer-events:none;letter-spacing:0.3px;';
+  badge.textContent = '🚚 DRIVER MODE';
+  document.body.appendChild(badge);
+}
+
+async function applyRoleBasedUI(wantsDriverMode) {
+  await checkAdminSession(); // populates currentAdminSession as a side effect
+  const role = (currentAdminSession && currentAdminSession.user)
+    ? (currentAdminSession.user.app_metadata || {}).role
+    : null;
+  currentSessionRole = role || null;
+
+  // Admin Portal entry point in the sidebar — only meaningful for a
+  // confirmed officer session. Real officers reach /user/#admin directly via
+  // /login/officer anyway, so hiding this for everyone else just declutters
+  // the citizen/driver-facing UI rather than pretending it's a security gate.
+  const adminSidebarBtn = document.querySelector('.sidebar-bottom-admin');
+  if (adminSidebarBtn) {
+    adminSidebarBtn.style.display = (role === 'officer') ? '' : 'none';
+  }
+
+  // A signed-in user/officer session landing on ?mode=driver isn't really in
+  // driver mode (initDriverLocationSharing() already refuses to share GPS
+  // unless role === 'driver') — drop the badge so the UI doesn't claim it is.
+  // Guests (role === null) keep the badge: "Continue as Guest" on the driver
+  // login page is a deliberately supported unauthenticated driver-mode path.
+  if (wantsDriverMode && (role === 'user' || role === 'officer')) {
+    const badge = document.getElementById('driver-mode-badge');
+    if (badge) badge.remove();
+  }
+
+  if (window.location.hash === '#admin') {
+    if (role && role !== 'officer') {
+      // Known non-officer session — bounce home instead of showing the
+      // officer login gate as if #admin were a normal, reachable path.
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      showToast('Admin Portal is restricted to authorized officers.');
+      switchScreen('home');
+    } else {
+      switchScreen('admin');
+    }
+  }
+}
+
 /* ---- STARTUP LIFECYCLE ---- */
 window.addEventListener('DOMContentLoaded', () => {
   // Always start at home map — clear any stale overlays
@@ -2230,21 +2866,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Show Driver Mode badge if navigated from /driver/
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('mode') === 'driver') {
-    const badge = document.createElement('div');
-    badge.id = 'driver-mode-badge';
-    badge.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1000;background:#34c759;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(52,199,89,0.4);pointer-events:none;letter-spacing:0.3px;';
-    badge.textContent = '🚚 DRIVER MODE';
-    document.body.appendChild(badge);
+  const wantsDriverMode = urlParams.get('mode') === 'driver';
+  if (wantsDriverMode) {
+    showDriverModeBadge();
+    initDriverLocationSharing();
   }
-  
+
   initHomeMap();
   fetchLiveWeather();
   loadLiveCorridors();
-  
-  if (window.location.hash === '#admin') {
-    switchScreen('admin');
-  }
+  detectRealHomeLocation();
+
+  applyRoleBasedUI(wantsDriverMode);
 
   updateAdminBadgeCount();
   setInterval(updateAdminBadgeCount, 25000);
@@ -2261,7 +2894,11 @@ function startAdminPoll() {
   adminPollTimer = setInterval(() => {
     if (document.getElementById('screen-admin') &&
         document.getElementById('screen-admin').classList.contains('active')) {
-      loadAdminIncidents();
+      if (currentAdminTab === 'Drivers') {
+        loadAdminDrivers();
+      } else {
+        loadAdminIncidents();
+      }
     }
   }, 10000); // refresh every 10 seconds
 }
@@ -2280,7 +2917,7 @@ function triggerBrowserNotification(alertObj) {
     const title = alertObj.title || "NER SafeRoute: Live Alert";
     const options = {
       body: alertObj.message || "A new hazard has been verified on your route.",
-      icon: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+      icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff3b30'%3E%3Ccircle cx='12' cy='12' r='11'/%3E%3Cpath d='M11 6h2v8h-2z' fill='%23fff'/%3E%3Ccircle cx='12' cy='17' r='1.3' fill='%23fff'/%3E%3C/svg%3E",
       vibrate: [200, 100, 200, 100, 200]
     };
     const notif = new Notification(title, options);

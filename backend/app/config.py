@@ -23,6 +23,15 @@ class Settings(BaseSettings):
         "postgresql://postgres:postgres_secure_password@localhost:5432/ner_link_db"
     )
     
+    # Supabase (Authentication)
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+    # Server-side only. Never expose to frontend/browser code.
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    # Shared secret gating officer self-signup. Give this to real officers only,
+    # out of band (not committed, not shown in the UI).
+    OFFICER_INVITE_CODE: str = os.getenv("OFFICER_INVITE_CODE", "")
+
     # External APIs
     IMD_API_KEY: str = os.getenv("IMD_API_KEY", "")
     IMD_API_ENDPOINT: str = os.getenv("IMD_API_ENDPOINT", "https://api.imd.gov.in/v1")

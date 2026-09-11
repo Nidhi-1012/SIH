@@ -28,13 +28,13 @@ class RoadSegmentResponse(RoadSegmentBase):
 
 class IncidentCreate(BaseModel):
     segment_id: Optional[str] = None
-    incident_type: str = Field(..., description="Landslide, Flash Flood, Mudslide, Bridge Damage, Rockfall")
+    incident_type: str = Field(..., description="Landslide, Flood, Heavy Rain, Road Blockage, Accident, Damaged Road, Bridge Problem, Other")
     severity: str = Field(..., description="Low, Medium, High, Critical")
     lat: float
     lon: float
     photo_url: Optional[str] = None
     notes: Optional[str] = None
-    reporter: Optional[str] = "Field Officer"
+    reporter: Optional[str] = None
 
 class IncidentResponse(IncidentCreate):
     id: int
