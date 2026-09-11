@@ -2225,6 +2225,9 @@ function toggleLang() {
 
 /* ---- STARTUP LIFECYCLE ---- */
 window.addEventListener('DOMContentLoaded', () => {
+  // Always start at home map — clear any stale overlays
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  
   initHomeMap();
   fetchLiveWeather();
   loadLiveCorridors();
