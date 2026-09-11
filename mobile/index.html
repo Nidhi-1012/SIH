@@ -7,7 +7,7 @@
 <title>NER SafeRoute — AI Safe Navigation & Logistics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
 
@@ -48,10 +48,10 @@
 html, body {
   height: 100%; width: 100%;
   background: var(--c-bg);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   color: var(--c-text);
-  font-size: 13.5px;
-  letter-spacing: -0.011em;
+  font-size: 13px;
+  letter-spacing: -0.006em;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -92,8 +92,8 @@ svg { display: block; flex-shrink: 0; }
   box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
 }
 .brand-name {
-  font-weight: 600;
-  font-size: 14.5px;
+  font-weight: 500;
+  font-size: 13.5px;
   letter-spacing: -0.02em;
   color: var(--c-text);
   display: flex;
@@ -112,7 +112,7 @@ svg { display: block; flex-shrink: 0; }
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 8px; border-radius: var(--r-pill);
   background: var(--c-safe-soft); color: var(--c-safe);
-  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
 }
 .live-dot {
   width: 6.5px; height: 6.5px; border-radius: 50%;
@@ -152,7 +152,7 @@ svg { display: block; flex-shrink: 0; }
   background: var(--c-crit);
   color: #fff;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
 }
 
@@ -163,7 +163,7 @@ svg { display: block; flex-shrink: 0; }
   background: var(--c-crit-soft);
   border: 1px solid rgba(255, 59, 48, 0.25);
   color: var(--c-crit);
-  font-size: 12.5px; font-weight: 600;
+  font-size: 12px; font-weight: 500;
   letter-spacing: 0.01em;
   transition: all 0.15s ease;
 }
@@ -228,7 +228,7 @@ svg { display: block; flex-shrink: 0; }
 }
 .wx-pop-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--c-text-2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -290,7 +290,7 @@ svg { display: block; flex-shrink: 0; }
 }
 .card-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--c-text-2);
@@ -313,7 +313,7 @@ svg { display: block; flex-shrink: 0; }
 }
 .input-group input {
   flex: 1;
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--c-text);
 }
 .input-group input::placeholder { color: var(--c-text-3); }
@@ -360,7 +360,7 @@ svg { display: block; flex-shrink: 0; }
   background: var(--c-primary);
   color: #ffffff;
   border-radius: var(--r-sm);
-  font-size: 13.5px; font-weight: 600;
+  font-size: 13px; font-weight: 600;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: all 0.15s ease;
   box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
@@ -377,7 +377,7 @@ svg { display: block; flex-shrink: 0; }
 }
 .dynamic-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--c-text-2);
@@ -411,7 +411,7 @@ svg { display: block; flex-shrink: 0; }
   box-shadow: var(--shadow-md);
 }
 .corridor-name {
-  font-size: 13px; font-weight: 600;
+  font-size: 12.5px; font-weight: 500;
   color: var(--c-text);
   margin-bottom: 2px;
 }
@@ -422,7 +422,7 @@ svg { display: block; flex-shrink: 0; }
 .risk-tag {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 8px; border-radius: var(--r-pill);
-  font-size: 11px; font-weight: 600;
+  font-size: 11px; font-weight: 500;
 }
 .tag-safe { background: var(--c-safe-soft); color: var(--c-safe); }
 .tag-warn { background: var(--c-warn-soft); color: var(--c-warn); }
@@ -455,14 +455,14 @@ svg { display: block; flex-shrink: 0; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   color: #ffffff; flex-shrink: 0;
 }
-.roc-score .num { font-size: 17px; font-weight: 700; line-height: 1; }
-.roc-score .txt { font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; margin-top: 3px; text-transform: uppercase; }
+.roc-score .num { font-size: 15px; font-weight: 600; line-height: 1; }
+.roc-score .txt { font-size: 8.5px; font-weight: 600; letter-spacing: 0.04em; margin-top: 3px; text-transform: uppercase; }
 .score-safe { background: var(--c-safe); }
 .score-warn { background: var(--c-warn); }
 .score-crit { background: var(--c-crit); }
 
 .roc-info { flex: 1; }
-.roc-name { font-size: 13.5px; font-weight: 600; color: var(--c-text); margin-bottom: 4px; }
+.roc-name { font-size: 13px; font-weight: 600; color: var(--c-text); margin-bottom: 4px; }
 .roc-metrics { font-size: 12px; color: var(--c-text-2); display: flex; gap: 12px; font-weight: 500; }
 .roc-metrics span { display: inline-flex; align-items: center; gap: 4px; }
 
@@ -557,7 +557,7 @@ svg { display: block; flex-shrink: 0; }
 .alert-item.crit { border-left-color: var(--c-crit); }
 .alert-item.warn { border-left-color: var(--c-warn); }
 .alert-item.safe { border-left-color: var(--c-safe); }
-.alert-title { font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
+.alert-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
 .alert-desc { font-size: 12.5px; color: var(--c-text-2); line-height: 1.4; }
 
 /* REPORT HAZARD GRID */
@@ -612,7 +612,7 @@ svg { display: block; flex-shrink: 0; }
   max-width: 500px; margin: 0 auto;
 }
 .nav-stats { display: flex; justify-content: space-around; text-align: center; }
-.ns-val { font-size: 20px; font-weight: 700; }
+.ns-val { font-size: 18px; font-weight: 600; }
 .ns-lbl { font-size: 11px; color: var(--c-text-2); text-transform: uppercase; margin-top: 2px; }
 
 /* MODAL & TOAST */
@@ -699,8 +699,8 @@ svg { display: block; flex-shrink: 0; }
   border: 1px solid var(--c-border);
   box-shadow: var(--shadow-sm);
   color: var(--c-text);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   letter-spacing: -0.01em;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
