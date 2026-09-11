@@ -718,6 +718,15 @@ svg { display: block; flex-shrink: 0; }
         <span class="btn-text">Report Hazard</span>
       </button>
 
+            <button class="nav-item-btn" onclick="switchScreen('admin')" title="Admin Verification Portal">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <span class="btn-text">Admin</span>
+        <span class="nav-badge-count" id="nav-admin-badge" style="display:none;background:var(--c-warn);color:#ffffff;">0</span>
+      </button>
+
       <button class="nav-sos-btn" onclick="openSOS()" title="Emergency Assistance">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -867,6 +876,41 @@ svg { display: block; flex-shrink: 0; }
       <div class="scrollable-body" id="alerts-list"></div>
     </div>
 
+    
+    <!-- ADMIN VERIFICATION PORTAL SCREEN -->
+    <div class="screen" id="screen-admin">
+      <div class="inner-hdr">
+        <button class="back-btn" onclick="switchScreen('home')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div style="flex:1;">
+          <div class="inner-hdr-title">Admin Verification Portal</div>
+          <div class="inner-hdr-sub">Review Field Reports, Snapped Segments & Authorize Broadcasts</div>
+        </div>
+        <button class="lang-toggle-btn" onclick="loadAdminIncidents()" style="display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <!-- TABS (APPLE SEGMENTED CONTROL) -->
+      <div style="max-width:720px;width:100%;margin:16px auto 0;padding:0 20px;">
+        <div style="background:rgba(0,0,0,0.06);padding:3px;border-radius:10px;display:flex;gap:4px;">
+          <button class="admin-tab-btn active" id="tab-btn-Pending" onclick="switchAdminTab('Pending')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--c-text);">
+            Pending Review <span id="tab-cnt-Pending" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(255,159,10,0.15);color:var(--c-warn);font-size:11px;">0</span>
+          </button>
+          <button class="admin-tab-btn" id="tab-btn-Verified" onclick="switchAdminTab('Verified')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+            Verified &amp; Live <span id="tab-cnt-Verified" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+          </button>
+          <button class="admin-tab-btn" id="tab-btn-Rejected" onclick="switchAdminTab('Rejected')" style="flex:1;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;text-align:center;transition:all .18s;background:transparent;color:var(--c-text-2);">
+            Rejected <span id="tab-cnt-Rejected" style="margin-left:4px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.06);font-size:11px;">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="scrollable-body" id="admin-incidents-list" style="max-width:720px;padding-top:14px;"></div>
+    </div>
+
     <!-- REPORT HAZARD SCREEN -->
     <div class="screen" id="screen-report">
       <div class="inner-hdr">
@@ -1009,9 +1053,9 @@ function initHomeMap() {
   homeMap = L.map('the-map', { zoomControl: false }).setView([25.9, 91.9], 9);
   
   // Clean, high-performance CartoDB Voyager tiles (Apple/Google aesthetic)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; CartoDB &copy; OpenStreetMap'
+    attribution: '&copy; OpenStreetMap contributors'
   }).addTo(homeMap);
 
   L.control.zoom({ position: 'bottomright' }).addTo(homeMap);
@@ -1266,7 +1310,7 @@ function startNav(r) {
 
   if (!navMap) {
     navMap = L.map('nav-map', { zoomControl: false }).setView([pos.lat, pos.lon], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(navMap);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(navMap);
   } else {
     setTimeout(() => navMap.invalidateSize(), 150);
   }
@@ -1313,6 +1357,9 @@ function switchScreen(screenName) {
     loadAlertsList();
   } else if (screenName === 'report') {
     document.getElementById('screen-report').classList.add('active');
+  } else if (screenName === 'admin') {
+    document.getElementById('screen-admin').classList.add('active');
+    loadAdminIncidents();
   } else if (screenName === 'nav') {
     document.getElementById('screen-nav').classList.add('active');
   }
@@ -1409,6 +1456,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initHomeMap();
   fetchLiveWeather();
   loadLiveCorridors();
+  updateAdminBadgeCount();
+  setInterval(updateAdminBadgeCount, 25000);
   // Live weather auto-poll every 60s
   setInterval(fetchLiveWeather, 60000);
 });
