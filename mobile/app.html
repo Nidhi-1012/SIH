@@ -2055,6 +2055,8 @@ async function rejectIncident(id) {
 /* ---- SCREEN SWITCHER ---- */
 function switchScreen(screenName) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Always restore navbar first; only admin/nav screens will hide it below
+  const _tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(_tnav) _tnav.style.display='';
   if (screenName === 'alerts') {
     document.getElementById('screen-alerts').classList.add('active');
     loadAlertsList();
