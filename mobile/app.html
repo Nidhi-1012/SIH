@@ -754,7 +754,7 @@ svg { display: block; flex-shrink: 0; }
           <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
         </svg>
         <span class="btn-text">Live Alerts</span>
-        <span class="nav-badge-count" id="nav-alert-badge">11</span>
+        <span class="nav-badge-count" id="nav-alert-badge" style="display:none;">0</span>
       </button>
 
       <button class="nav-item-btn" onclick="switchScreen('report')" title="Report Road Hazard">
@@ -2009,6 +2009,8 @@ window.addEventListener('DOMContentLoaded', () => {
   updateAdminBadgeCount();
   setInterval(updateAdminBadgeCount, 25000);
   // Live weather auto-poll every 60s
+  fetchAlertsBackground();
+  setInterval(fetchAlertsBackground, 15000);
   setInterval(fetchLiveWeather, 60000);
 });
 
@@ -2025,6 +2027,26 @@ function startAdminPoll() {
 }
 function stopAdminPoll() {
   if (adminPollTimer) { clearInterval(adminPollTimer); adminPollTimer = null; }
+}
+
+
+/* ---- LIVE ALERTS BACKGROUND POLLER ---- */
+async function fetchAlertsBackground() {
+  try {
+    const res = await fetch('/api/v1/alerts');
+    const data = await res.json();
+    const badge = document.getElementById('nav-alert-badge');
+    if (badge) {
+      if (Array.isArray(data) && data.length > 0) {
+        badge.textContent = data.length;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (e) {
+    // silently fail in background
+  }
 }
 
 </script>
