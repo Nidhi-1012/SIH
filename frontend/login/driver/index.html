@@ -46,7 +46,7 @@
             </div>
             <span class="field-msg"></span>
           </div>
-          <div class="input-group" style="margin-bottom: 22px;">
+          <div class="input-group">
             <label for="password">PASSWORD</label>
             <div class="input-wrap">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -56,6 +56,41 @@
             <div class="pw-strength" id="pw-strength">
               <div class="pw-strength-bars"><span></span><span></span><span></span></div>
               <span class="pw-strength-label"></span>
+            </div>
+          </div>
+
+          <div class="driver-profile-box" id="driver-profile-box" hidden style="margin-top:4px;">
+            <div class="input-group">
+              <label for="full-name">FULL NAME</label>
+              <div class="input-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+                <input type="text" id="full-name" name="full_name" placeholder="As on your driving license" autocomplete="name">
+              </div>
+              <span class="field-msg"></span>
+            </div>
+            <div class="input-group">
+              <label for="phone">PHONE NUMBER</label>
+              <div class="input-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <input type="tel" id="phone" name="phone" placeholder="10-digit mobile number" autocomplete="tel">
+              </div>
+              <span class="field-msg"></span>
+            </div>
+            <div class="input-group">
+              <label for="license-number">DRIVING LICENSE NUMBER</label>
+              <div class="input-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h6M14 14h4"/></svg>
+                <input type="text" id="license-number" name="license_number" placeholder="e.g. MH12 20230012345" autocomplete="off">
+              </div>
+              <span class="field-msg"></span>
+            </div>
+            <div class="input-group" style="margin-bottom: 22px;">
+              <label for="vehicle-number">VEHICLE REGISTRATION NUMBER</label>
+              <div class="input-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7.5" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg>
+                <input type="text" id="vehicle-number" name="vehicle_number" placeholder="e.g. AS01AB1234" autocomplete="off">
+              </div>
+              <span class="field-msg"></span>
             </div>
           </div>
 
@@ -92,6 +127,11 @@
 
     const emailEl = document.getElementById('email');
     const passwordEl = document.getElementById('password');
+    const fullNameEl = document.getElementById('full-name');
+    const phoneEl = document.getElementById('phone');
+    const licenseEl = document.getElementById('license-number');
+    const vehicleEl = document.getElementById('vehicle-number');
+    const driverProfileBoxEl = document.getElementById('driver-profile-box');
     const tabLogin = document.getElementById('tab-login');
     const tabSignup = document.getElementById('tab-signup');
     const btnSubmit = document.getElementById('btn-submit');
@@ -109,8 +149,10 @@
       tabLogin.setAttribute('aria-pressed', mode === 'login');
       tabSignup.setAttribute('aria-pressed', mode === 'signup');
       btnSubmit.querySelector('.btn-text').textContent = MODE_LABEL[mode];
-      // Password strength is only meaningful when creating a new password
+      // Password strength and the driver profile fields (name/phone/license/
+      // vehicle) only apply when creating a new account, not signing in.
       pwStrengthEl.style.display = mode === 'signup' ? '' : 'none';
+      driverProfileBoxEl.hidden = mode !== 'signup';
       errorEl.style.display = 'none';
       successEl.style.display = 'none';
     }
@@ -122,7 +164,14 @@
     }
 
     function formValid() {
-      return isValidEmail(emailEl.value) && passwordEl.value.length >= 6;
+      if (!isValidEmail(emailEl.value) || passwordEl.value.length < 6) return false;
+      if (currentMode === 'signup') {
+        return fullNameEl.value.trim().length > 1
+          && phoneEl.value.trim().length >= 10
+          && licenseEl.value.trim().length > 3
+          && vehicleEl.value.trim().length > 3;
+      }
+      return true;
     }
 
     function setButtonEnabled(enabled) { btnSubmit.disabled = !enabled; }
@@ -168,7 +217,13 @@
           const reg = await fetch('/api/v1/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, role: 'driver' })
+            body: JSON.stringify({
+              email, password, role: 'driver',
+              full_name: fullNameEl.value.trim(),
+              phone: phoneEl.value.trim(),
+              license_number: licenseEl.value.trim(),
+              vehicle_number: vehicleEl.value.trim(),
+            })
           });
           if (!reg.ok) {
             const err = await reg.json().catch(() => ({}));

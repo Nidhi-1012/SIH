@@ -94,6 +94,14 @@ class Driver(Base):
     driver_code = Column(String, unique=True, index=True, nullable=False)  # stable DRV-001, DRV-002, ...
     supabase_user_id = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, nullable=True)
+    # Nullable: rows created via the lazy _get_or_create_driver() fallback
+    # (a driver who reaches /api/v1/driver/location without ever going
+    # through the registration form -- e.g. signed up before this existed)
+    # won't have these yet. Rows created at registration always populate them.
+    full_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    license_number = Column(String, nullable=True)
+    vehicle_number = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class Alert(Base):

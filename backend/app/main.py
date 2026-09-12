@@ -145,13 +145,33 @@ logger = logging.getLogger("admin_auth")
 
 # 1b. Registration (role set server-side via app_metadata — see auth_service.py)
 @app.post("/api/v1/auth/register")
-async def register(payload: dict):
+async def register(payload: dict, db: Session = Depends(get_db)):
     email = payload.get("email")
     password = payload.get("password")
     role = payload.get("role", "user")
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password are required.")
-    return await register_user(email, password, role)
+
+    driver_profile = {}
+    if role == "driver":
+        driver_profile = {
+            "full_name": (payload.get("full_name") or "").strip(),
+            "phone": (payload.get("phone") or "").strip(),
+            "license_number": (payload.get("license_number") or "").strip(),
+            "vehicle_number": (payload.get("vehicle_number") or "").strip(),
+        }
+        if not all(driver_profile.values()):
+            raise HTTPException(
+                status_code=400,
+                detail="Full name, phone number, license number, and vehicle registration number are all required to register as a driver.",
+            )
+
+    user = await register_user(email, password, role)
+
+    if role == "driver":
+        _create_driver_row(db, user["id"], email, **driver_profile)
+
+    return user
 
 @app.post("/api/v1/auth/register-officer")
 async def register_officer_account(payload: dict):
@@ -410,21 +430,43 @@ def toggle_emergency_mode(db: Session = Depends(get_db), officer: dict = Depends
         "multilingual_broadcast": translations
     }
 
-def _get_or_create_driver(db: Session, user_id: str, email: Optional[str]) -> Driver:
-    driver = db.query(Driver).filter(Driver.supabase_user_id == user_id).first()
-    if driver:
-        return driver
+def _create_driver_row(
+    db: Session,
+    user_id: str,
+    email: Optional[str],
+    full_name: Optional[str] = None,
+    phone: Optional[str] = None,
+    license_number: Optional[str] = None,
+    vehicle_number: Optional[str] = None,
+) -> Driver:
     # driver_code is derived from the row's own primary key (assigned via
     # flush, before commit) rather than a row count -- a count-based code
     # collides under concurrent signups or after any row is ever deleted,
     # and driver_code is UNIQUE, so that would 500 instead of just working.
-    driver = Driver(driver_code="PENDING", supabase_user_id=user_id, email=email)
+    driver = Driver(
+        driver_code="PENDING",
+        supabase_user_id=user_id,
+        email=email,
+        full_name=full_name,
+        phone=phone,
+        license_number=license_number,
+        vehicle_number=vehicle_number,
+    )
     db.add(driver)
     db.flush()
     driver.driver_code = f"DRV-{driver.id:03d}"
     db.commit()
     db.refresh(driver)
     return driver
+
+def _get_or_create_driver(db: Session, user_id: str, email: Optional[str]) -> Driver:
+    driver = db.query(Driver).filter(Driver.supabase_user_id == user_id).first()
+    if driver:
+        return driver
+    # Fallback for a driver who reaches this endpoint without ever going
+    # through the registration form -- profile fields stay blank, since we
+    # have no source for them here.
+    return _create_driver_row(db, user_id, email)
 
 # 7. Telemetry & Live Vehicle Tracking API
 @app.post("/api/v1/telemetry")
@@ -540,6 +582,10 @@ def list_live_drivers(db: Session = Depends(get_db), officer: dict = Depends(req
         result.append({
             "driver_code": driver_row.driver_code,
             "email": driver_row.email,
+            "full_name": driver_row.full_name,
+            "phone": driver_row.phone,
+            "license_number": driver_row.license_number,
+            "vehicle_number": driver_row.vehicle_number,
             "lat": latest.lat if latest else None,
             "lon": latest.lon if latest else None,
             "speed_kmh": latest.speed_kmh if latest else None,
