@@ -2837,6 +2837,78 @@ function clearPhoto() {
 // Auto-detect location when report screen opens
 const _origSwitchScreen = typeof switchScreen !== 'undefined' ? switchScreen : null;
 
+const OFFLINE_QUEUE_KEY = 'ner_offline_queue';
+
+function _generateClientReportId() {
+  return 'client-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function _readOfflineQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function _writeOfflineQueue(queue) {
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+}
+
+function queueIncidentOffline(payload) {
+  const queue = _readOfflineQueue();
+  queue.push({ client_report_id: payload.client_report_id, payload });
+  _writeOfflineQueue(queue);
+}
+
+function getOfflineQueueCount() {
+  return _readOfflineQueue().length;
+}
+
+async function flushOfflineQueue() {
+  const queue = _readOfflineQueue();
+  if (queue.length === 0) return;
+
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      const res = await fetch('/api/v1/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.payload),
+      });
+      if (!res.ok) remaining.push(item);
+    } catch (e) {
+      remaining.push(item); // still offline or backend unreachable — keep it queued
+    }
+  }
+  _writeOfflineQueue(remaining);
+
+  const flushedCount = queue.length - remaining.length;
+  if (flushedCount > 0) {
+    showToast(`${flushedCount} queued report(s) synced.`);
+  }
+  updateOfflineQueueBadge();
+}
+
+function updateOfflineQueueBadge() {
+  const count = getOfflineQueueCount();
+  let badge = document.getElementById('offline-queue-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'offline-queue-badge';
+      badge.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--c-warn);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;';
+      document.body.appendChild(badge);
+    }
+    badge.textContent = `${count} report(s) pending sync`;
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+window.addEventListener('online', flushOfflineQueue);
+
 async function submitReport() {
   const note = document.getElementById('report-note').value.trim();
   const lat = reportLat || pos.lat;
@@ -2857,23 +2929,30 @@ async function submitReport() {
     }
   } catch (e) {}
 
-  try {
-    await fetch('/api/v1/incidents', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        incident_type: selHazard,
-        severity: 'High',
-        notes: note || `${selHazard} reported on active corridor`,
-        lat: lat,
-        lon: lon,
-        photo_url: reportPhotoBase64 || null,
-        reporter: 'Citizen Field Reporter'
-      })
-    });
-  } catch (e) {}
+    const payload = {
+      incident_type: selHazard,
+      severity: 'High',
+      notes: note || `${selHazard} reported on active corridor`,
+      lat: lat,
+      lon: lon,
+      photo_url: reportPhotoBase64 || null,
+      reporter: 'Citizen Field Reporter',
+      client_report_id: _generateClientReportId()
+    };
+    try {
+      const res = await fetch('/api/v1/incidents', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('submit failed');
+      showToast('Report submitted! Pending admin verification.');
+    } catch (e) {
+      queueIncidentOffline(payload);
+      updateOfflineQueueBadge();
+      showToast('No connection — report saved and will sync automatically when you\'re back online.');
+    }
   setTimeout(() => {
-    showToast('Report submitted! Pending admin verification.');
     const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='';
   switchScreen('home');
     document.getElementById('report-note').value = '';
@@ -3031,6 +3110,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initHomeMap();
   fetchLiveWeather();
   loadLiveCorridors();
+  updateOfflineQueueBadge();
+  flushOfflineQueue();
   detectRealHomeLocation();
 
   applyRoleBasedUI(wantsDriverMode);

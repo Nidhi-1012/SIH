@@ -2372,7 +2372,7 @@ git commit -m "feat: add client_report_id idempotency to incident creation for o
   `getOfflineQueueCount()` — backed by `localStorage` key `ner_offline_queue`
   (a JSON array of `{client_report_id, payload}` objects).
 
-- [ ] **Step 1: Add the queue functions**
+- [x] **Step 1: Add the queue functions**
 
 Add near the report-submission code (search for the function that currently
 does `await fetch('/api/v1/incidents', {`):
@@ -2451,7 +2451,7 @@ function updateOfflineQueueBadge() {
 window.addEventListener('online', flushOfflineQueue);
 ```
 
-- [ ] **Step 2: Route submission through the queue on failure**
+- [x] **Step 2: Route submission through the queue on failure**
 
 Find the incident-submission function (the one modified in Phase 4, Step 5,
 containing `photo_url: reportPhotoBase64 || null,`). It currently does
@@ -2491,7 +2491,7 @@ Preserve every existing field already being sent in that payload object
 add `client_report_id` as a new field and wrap the whole `fetch` in the
 try/catch shown.
 
-- [ ] **Step 3: Flush the queue and show the badge on startup**
+- [x] **Step 3: Flush the queue and show the badge on startup**
 
 Find `window.addEventListener('DOMContentLoaded', () => {` (the startup
 lifecycle function already modified during the earlier driver-mode work).
@@ -2502,7 +2502,7 @@ Add these two lines inside it, near `loadLiveCorridors();`:
   flushOfflineQueue();
 ```
 
-- [ ] **Step 4: Verify — this is the acceptance test from the project's own implementation plan**
+- [x] **Step 4: Verify — this is the acceptance test from the project's own implementation plan**
 
 1. Open the app with the backend running normally.
 2. Open browser devtools → Network tab → set throttling to "Offline".
@@ -2516,7 +2516,7 @@ Add these two lines inside it, near `loadLiveCorridors();`:
    `curl http://127.0.0.1:8000/api/v1/incidents` shows exactly one new
    incident (not duplicated) matching what was submitted offline.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/user/index.html
