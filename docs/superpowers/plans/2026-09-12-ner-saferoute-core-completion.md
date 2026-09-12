@@ -2540,7 +2540,7 @@ deadline, do not start this phase unless Phases 0–5 are complete and verified.
 - Create: `data/osm/` (directory, gitignored per existing `.gitignore` rule
   `data/osm/` — do not commit the extract file itself, it's large binary data)
 
-- [ ] **Step 1: Write the download script**
+- [x] **Step 1: Write the download script**
 
 Create `routing/download_osm_extract.py`:
 
@@ -2585,13 +2585,13 @@ exact filename for the northeast region extract (Geofabrik does rename these
 periodically) and update `EXTRACT_URL` accordingly — do not guess a different
 URL structure, read the actual page.
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `python routing/download_osm_extract.py`
 
 Expected: a file at `data/osm/northeast-india.osm.pbf`, several hundred MB.
 
-- [ ] **Step 3: Start GraphHopper against it**
+- [x] **Step 3: Start GraphHopper against it**
 
 ```bash
 docker compose up graphhopper
@@ -2602,7 +2602,7 @@ docker compose up graphhopper
 no changes needed to that file). Wait for its healthcheck to pass (can take
 several minutes on first run while GraphHopper builds its routing graph).
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 curl -s "http://localhost:8989/route?point=26.1445,91.7362&point=25.5788,91.8933&profile=car" | python -c "import sys,json; d=json.load(sys.stdin); print(d['paths'][0]['distance']/1000, 'km')"
@@ -2626,7 +2626,7 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/route -H "Content-Type: application
 Expected: `has geometry: True` with more than 10 points (real road-following
 polyline, not the 4-6 point straight-segment fallback).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add routing/download_osm_extract.py
