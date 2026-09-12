@@ -95,21 +95,33 @@ npm run dev
 
 Computed by `ml/benchmark_replay.py` (run it yourself: `python ml/benchmark_replay.py`
 from the repo root) — it calls the same routing and risk-scoring code the live
-API uses, against the real pilot-corridor segments, under a simulated
-corridor-wide monsoon event. Full per-pair results in
-`ml/artifacts/benchmark_results.json`. These are not hand-typed figures.
+API uses, against the real pilot-corridor segments, under two simulated
+weather scenarios. Full per-pair results in `ml/artifacts/benchmark_results.json`.
+These are not hand-typed figures.
 
-* **Stranding avoided:** a naive shortest-distance router (no live road-condition
-  awareness) drives straight through a confirmed closure on 83.3% of the
-  benchmark's origin-destination pairs during the simulated event. A
-  closure-aware router — ours included — strands on 0%.
-* **Risk exposure reduction:** 47.0% lower average route risk score than the
-  naive baseline, on the pairs both could actually route.
-* **Known limitation, not hidden:** on the current 10-segment pilot corridor,
-  which is a single linear/tree road network with no alternate bypass routes,
-  risk-weighted routing and simple closure-avoidance produce identical
-  results — there's no second path to choose between yet, so "smarter
-  rerouting" isn't distinguishable from "avoid the closed road" in this
-  dataset. Demonstrating a genuine AI-selected detour (not just closure
-  avoidance) needs at least one real alternate-route segment added to the
-  pilot corridor data.
+**Scenario 1 — Severe Monsoon Closure** (a segment pushed fully Blocked):
+* A naive shortest-distance router (no live road-condition awareness) drives
+  straight through the confirmed closure on **83.3%** of the benchmark's
+  origin-destination pairs. Any closure-aware router — ours included —
+  strands on **0%**.
+
+**Scenario 2 — Elevated Risk Advisory** (a segment pushed to Caution, but
+still technically open — the case a purely reactive, closure-only system
+can't see): this is the genuine "AI picks the safer route before the road
+fails" comparison, made possible by a real alternate bypass
+(`SEG-NH6-06-ALT` in `data/pilot_corridor.json`) added around the corridor's
+highest-risk segment specifically so this comparison exists.
+* A naive router and a purely reactive closure-avoider both still drive
+  through the elevated-risk segment on 5 of 6 test routes — neither has any
+  concept of "risky but open."
+* NER-LINK AI's risk-weighted routing reroutes around it on 2 of those 5,
+  cutting average risk exposure by **30.4%** — proactively, before any
+  closure is confirmed.
+
+**Known limitation, stated plainly:** this differentiation currently exists
+at exactly one point in the pilot corridor (the bypass added around
+`SEG-NH6-06`). Other high-risk segments in the dataset (e.g. the
+Nongpoh–Umiam stretch) still have no alternate route, so a closure there
+still means "no route," not a smart detour, for every strategy alike.
+Extending real alternate routes to more of the corridor is the next step
+toward a fully general safe-routing claim, not a solved problem yet.

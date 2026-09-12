@@ -112,6 +112,22 @@
       "status": "Caution"
     },
     {
+      "segment_id": "SEG-NH6-06-ALT",
+      "road_name": "Jowai to Sonapur via Ummulong Foothill Bypass",
+      "road_class": "State Highway / District Bypass",
+      "district": "East Jaintia Hills",
+      "state": "Meghalaya",
+      "start_coords": [25.4485, 92.2030],
+      "end_coords": [25.1166, 92.3551],
+      "bridge_id": null,
+      "length_km": 71.5,
+      "terrain_type": "Foothill Plains",
+      "landslide_susceptibility": 0.15,
+      "base_risk_score": 20,
+      "status": "Open",
+      "notes": "Representative alternate route modeling a real district-road bypass around the adjacent Critical Mudslide Zone segment (SEG-NH6-06) -- not a surveyed GPS path, same modeling standard as the rest of this pilot corridor dataset. Added so risk-weighted routing has a genuine second path to choose at the corridor's highest-risk point."
+    },
+    {
       "segment_id": "SEG-NH6-07",
       "road_name": "NH-6 Sonapur to Silchar Valley",
       "road_class": "National Highway",

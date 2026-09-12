@@ -1,159 +1,572 @@
 {
-  "computed_at": "2026-09-12T05:24:13.795595Z",
-  "methodology": "Every number below comes from calling the same backend/app/services/{risk_model_service,graph_routing_service}.py code the live API uses, against the real segments in data/pilot_corridor.json, under a simulated corridor-wide monsoon event (95.0mm/24h rainfall applied to every segment). No numbers in this file are hand-typed.",
-  "risk_score_source": "ml_model",
-  "monsoon_rainfall_24h_mm": 95.0,
-  "segments_blocked_by_scenario": [
-    "SEG-NH13-01",
-    "SEG-NH13-02",
-    "SEG-NH6-03",
-    "SEG-NH6-06"
-  ],
-  "baselines": {
-    "naive_shortest_distance": {
-      "pairs_evaluated": 6,
-      "pairs_with_no_available_route": 0,
-      "pairs_routed_through_confirmed_closure": 5,
-      "stranding_rate_pct": 83.3,
-      "avg_risk_exposure": 58.3,
-      "avg_eta_minutes": 314.3,
-      "per_pair_detail": [
-        {
-          "pair": "Guwahati -> Silchar",
-          "routed": true,
-          "distance_km": 248.1,
-          "eta_minutes": 496.0,
-          "avg_risk_score": 64.0,
-          "drives_through_confirmed_closure": true
+  "computed_at": "2026-09-12T05:30:35.842483Z",
+  "methodology": "Every number below comes from calling the same backend/app/services/{risk_model_service,graph_routing_service}.py code the live API uses, against the real segments in data/pilot_corridor.json (including SEG-NH6-06-ALT, a representative bypass route added specifically to make a genuine alternate-path comparison possible -- see its `notes` field in that file). No numbers in this file are hand-typed.",
+  "scenarios": {
+    "severe_monsoon_closure": {
+      "label": "Severe Monsoon Closure",
+      "demonstrates": "Stranding avoidance -- does the router refuse a confirmed closure?",
+      "rainfall_24h_mm": 95.0,
+      "risk_score_source": "ml_model",
+      "segments_blocked_by_scenario": [
+        "SEG-NH13-01",
+        "SEG-NH13-02",
+        "SEG-NH6-03",
+        "SEG-NH6-06"
+      ],
+      "segments_at_elevated_caution": [
+        "SEG-NH15-01",
+        "SEG-NH6-01",
+        "SEG-NH6-02",
+        "SEG-NH6-04",
+        "SEG-NH6-05",
+        "SEG-NH6-06-ALT",
+        "SEG-NH6-07"
+      ],
+      "baselines": {
+        "naive_shortest_distance": {
+          "pairs_evaluated": 6,
+          "pairs_with_no_available_route": 0,
+          "pairs_routed_through_confirmed_closure": 5,
+          "stranding_rate_pct": 83.3,
+          "pairs_routed_through_elevated_caution_segment": 6,
+          "avg_risk_exposure": 62.2,
+          "avg_eta_minutes": 310.3,
+          "per_pair_detail": [
+            {
+              "pair": "Guwahati -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-01",
+                "SEG-NH6-02",
+                "SEG-NH6-03",
+                "SEG-NH6-04",
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 248.1,
+              "eta_minutes": 496.0,
+              "avg_risk_score": 64.0,
+              "drives_through_confirmed_closure": true,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Guwahati -> Shillong",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-01",
+                "SEG-NH6-02",
+                "SEG-NH6-03",
+                "SEG-NH6-04"
+              ],
+              "distance_km": 83.9,
+              "eta_minutes": 154.0,
+              "avg_risk_score": 56.3,
+              "drives_through_confirmed_closure": true,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Shillong -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 164.2,
+              "eta_minutes": 341.0,
+              "avg_risk_score": 74.3,
+              "drives_through_confirmed_closure": true,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Jowai -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 116.2,
+              "eta_minutes": 245.0,
+              "avg_risk_score": 76.2,
+              "drives_through_confirmed_closure": true,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Nongpoh -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-03",
+                "SEG-NH6-04",
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 208.2,
+              "eta_minutes": 435.0,
+              "avg_risk_score": 71.4,
+              "drives_through_confirmed_closure": true,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Guwahati -> Tezpur",
+              "routed": true,
+              "segments": [
+                "SEG-NH15-01"
+              ],
+              "distance_km": 175.0,
+              "eta_minutes": 191.0,
+              "avg_risk_score": 30.9,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            }
+          ]
         },
-        {
-          "pair": "Guwahati -> Shillong",
-          "routed": true,
-          "distance_km": 83.9,
-          "eta_minutes": 154.0,
-          "avg_risk_score": 56.3,
-          "drives_through_confirmed_closure": true
-        },
-        {
-          "pair": "Guwahati -> Jowai",
-          "routed": true,
-          "distance_km": 131.9,
-          "eta_minutes": 250.0,
-          "avg_risk_score": 59.2,
-          "drives_through_confirmed_closure": true
-        },
-        {
-          "pair": "Nongpoh -> Silchar",
-          "routed": true,
-          "distance_km": 208.2,
-          "eta_minutes": 435.0,
-          "avg_risk_score": 71.4,
-          "drives_through_confirmed_closure": true
-        },
-        {
-          "pair": "Umiam -> Silchar",
-          "routed": true,
-          "distance_km": 177.0,
-          "eta_minutes": 360.0,
-          "avg_risk_score": 68.0,
-          "drives_through_confirmed_closure": true
-        },
-        {
-          "pair": "Guwahati -> Tezpur",
-          "routed": true,
-          "distance_km": 175.0,
-          "eta_minutes": 191.0,
-          "avg_risk_score": 30.9,
-          "drives_through_confirmed_closure": false
+        "reactive_closure_only": {
+          "pairs_evaluated": 6,
+          "pairs_with_no_available_route": 3,
+          "pairs_routed_through_confirmed_closure": 0,
+          "stranding_rate_pct": 0.0,
+          "pairs_routed_through_elevated_caution_segment": 3,
+          "avg_risk_exposure": 44.0,
+          "avg_eta_minutes": 222.3,
+          "per_pair_detail": [
+            {
+              "pair": "Guwahati -> Silchar",
+              "routed": false,
+              "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+            },
+            {
+              "pair": "Guwahati -> Shillong",
+              "routed": false,
+              "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+            },
+            {
+              "pair": "Shillong -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-05",
+                "SEG-NH6-06-ALT",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 181.5,
+              "eta_minutes": 286.0,
+              "avg_risk_score": 54.5,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Jowai -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-06-ALT",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 133.5,
+              "eta_minutes": 190.0,
+              "avg_risk_score": 46.5,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Nongpoh -> Silchar",
+              "routed": false,
+              "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+            },
+            {
+              "pair": "Guwahati -> Tezpur",
+              "routed": true,
+              "segments": [
+                "SEG-NH15-01"
+              ],
+              "distance_km": 175.0,
+              "eta_minutes": 191.0,
+              "avg_risk_score": 30.9,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            }
+          ]
         }
-      ]
+      },
+      "ner_link_ai_risk_weighted": {
+        "pairs_evaluated": 6,
+        "pairs_with_no_available_route": 3,
+        "pairs_routed_through_confirmed_closure": 0,
+        "stranding_rate_pct": 0.0,
+        "pairs_routed_through_elevated_caution_segment": 3,
+        "avg_risk_exposure": 44.0,
+        "avg_eta_minutes": 222.3,
+        "per_pair_detail": [
+          {
+            "pair": "Guwahati -> Silchar",
+            "routed": false,
+            "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+          },
+          {
+            "pair": "Guwahati -> Shillong",
+            "routed": false,
+            "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+          },
+          {
+            "pair": "Shillong -> Silchar",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-05",
+              "SEG-NH6-06-ALT",
+              "SEG-NH6-07"
+            ],
+            "distance_km": 181.5,
+            "eta_minutes": 286.0,
+            "avg_risk_score": 54.5,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": true
+          },
+          {
+            "pair": "Jowai -> Silchar",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-06-ALT",
+              "SEG-NH6-07"
+            ],
+            "distance_km": 133.5,
+            "eta_minutes": 190.0,
+            "avg_risk_score": 46.5,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": true
+          },
+          {
+            "pair": "Nongpoh -> Silchar",
+            "routed": false,
+            "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+          },
+          {
+            "pair": "Guwahati -> Tezpur",
+            "routed": true,
+            "segments": [
+              "SEG-NH15-01"
+            ],
+            "distance_km": 175.0,
+            "eta_minutes": 191.0,
+            "avg_risk_score": 30.9,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": true
+          }
+        ]
+      },
+      "risk_exposure_reduction_vs_naive_baseline_pct": 29.3
     },
-    "reactive_closure_only": {
-      "pairs_evaluated": 6,
-      "pairs_with_no_available_route": 5,
-      "pairs_routed_through_confirmed_closure": 0,
-      "stranding_rate_pct": 0.0,
-      "avg_risk_exposure": 30.9,
-      "avg_eta_minutes": 191.0,
-      "per_pair_detail": [
-        {
-          "pair": "Guwahati -> Silchar",
-          "routed": false,
-          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+    "elevated_risk_advisory": {
+      "label": "Elevated Risk Advisory",
+      "demonstrates": "Proactive rerouting -- with SEG-NH6-06 elevated to Caution but still technically open, does the router choose the safer SEG-NH6-06-ALT bypass before the road fails, or only react once it's fully closed?",
+      "rainfall_24h_mm": 40.0,
+      "risk_score_source": "ml_model",
+      "segments_blocked_by_scenario": [],
+      "segments_at_elevated_caution": [
+        "SEG-NH13-01",
+        "SEG-NH13-02",
+        "SEG-NH6-03",
+        "SEG-NH6-06"
+      ],
+      "baselines": {
+        "naive_shortest_distance": {
+          "pairs_evaluated": 6,
+          "pairs_with_no_available_route": 0,
+          "pairs_routed_through_confirmed_closure": 0,
+          "stranding_rate_pct": 0.0,
+          "pairs_routed_through_elevated_caution_segment": 5,
+          "avg_risk_exposure": 38.2,
+          "avg_eta_minutes": 310.3,
+          "per_pair_detail": [
+            {
+              "pair": "Guwahati -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-01",
+                "SEG-NH6-02",
+                "SEG-NH6-03",
+                "SEG-NH6-04",
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 248.1,
+              "eta_minutes": 496.0,
+              "avg_risk_score": 38.7,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Guwahati -> Shillong",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-01",
+                "SEG-NH6-02",
+                "SEG-NH6-03",
+                "SEG-NH6-04"
+              ],
+              "distance_km": 83.9,
+              "eta_minutes": 154.0,
+              "avg_risk_score": 31.5,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Shillong -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 164.2,
+              "eta_minutes": 341.0,
+              "avg_risk_score": 48.2,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Jowai -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 116.2,
+              "eta_minutes": 245.0,
+              "avg_risk_score": 52.9,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Nongpoh -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-03",
+                "SEG-NH6-04",
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 208.2,
+              "eta_minutes": 435.0,
+              "avg_risk_score": 45.5,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Guwahati -> Tezpur",
+              "routed": true,
+              "segments": [
+                "SEG-NH15-01"
+              ],
+              "distance_km": 175.0,
+              "eta_minutes": 191.0,
+              "avg_risk_score": 12.3,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": false
+            }
+          ]
         },
-        {
-          "pair": "Guwahati -> Shillong",
-          "routed": false,
-          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-        },
-        {
-          "pair": "Guwahati -> Jowai",
-          "routed": false,
-          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-        },
-        {
-          "pair": "Nongpoh -> Silchar",
-          "routed": false,
-          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-        },
-        {
-          "pair": "Umiam -> Silchar",
-          "routed": false,
-          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-        },
-        {
-          "pair": "Guwahati -> Tezpur",
-          "routed": true,
-          "distance_km": 175.0,
-          "eta_minutes": 191.0,
-          "avg_risk_score": 30.9,
-          "drives_through_confirmed_closure": false
+        "reactive_closure_only": {
+          "pairs_evaluated": 6,
+          "pairs_with_no_available_route": 0,
+          "pairs_routed_through_confirmed_closure": 0,
+          "stranding_rate_pct": 0.0,
+          "pairs_routed_through_elevated_caution_segment": 5,
+          "avg_risk_exposure": 38.2,
+          "avg_eta_minutes": 310.3,
+          "per_pair_detail": [
+            {
+              "pair": "Guwahati -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-01",
+                "SEG-NH6-02",
+                "SEG-NH6-03",
+                "SEG-NH6-04",
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 248.1,
+              "eta_minutes": 496.0,
+              "avg_risk_score": 38.7,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Guwahati -> Shillong",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-01",
+                "SEG-NH6-02",
+                "SEG-NH6-03",
+                "SEG-NH6-04"
+              ],
+              "distance_km": 83.9,
+              "eta_minutes": 154.0,
+              "avg_risk_score": 31.5,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Shillong -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 164.2,
+              "eta_minutes": 341.0,
+              "avg_risk_score": 48.2,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Jowai -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 116.2,
+              "eta_minutes": 245.0,
+              "avg_risk_score": 52.9,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Nongpoh -> Silchar",
+              "routed": true,
+              "segments": [
+                "SEG-NH6-03",
+                "SEG-NH6-04",
+                "SEG-NH6-05",
+                "SEG-NH6-06",
+                "SEG-NH6-07"
+              ],
+              "distance_km": 208.2,
+              "eta_minutes": 435.0,
+              "avg_risk_score": 45.5,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": true
+            },
+            {
+              "pair": "Guwahati -> Tezpur",
+              "routed": true,
+              "segments": [
+                "SEG-NH15-01"
+              ],
+              "distance_km": 175.0,
+              "eta_minutes": 191.0,
+              "avg_risk_score": 12.3,
+              "drives_through_confirmed_closure": false,
+              "drives_through_elevated_caution_segment": false
+            }
+          ]
         }
-      ]
+      },
+      "ner_link_ai_risk_weighted": {
+        "pairs_evaluated": 6,
+        "pairs_with_no_available_route": 0,
+        "pairs_routed_through_confirmed_closure": 0,
+        "stranding_rate_pct": 0.0,
+        "pairs_routed_through_elevated_caution_segment": 3,
+        "avg_risk_exposure": 26.6,
+        "avg_eta_minutes": 273.5,
+        "per_pair_detail": [
+          {
+            "pair": "Guwahati -> Silchar",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-01",
+              "SEG-NH6-02",
+              "SEG-NH6-03",
+              "SEG-NH6-04",
+              "SEG-NH6-05",
+              "SEG-NH6-06-ALT",
+              "SEG-NH6-07"
+            ],
+            "distance_km": 265.4,
+            "eta_minutes": 440.0,
+            "avg_risk_score": 30.2,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": true
+          },
+          {
+            "pair": "Guwahati -> Shillong",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-01",
+              "SEG-NH6-02",
+              "SEG-NH6-03",
+              "SEG-NH6-04"
+            ],
+            "distance_km": 83.9,
+            "eta_minutes": 154.0,
+            "avg_risk_score": 31.5,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": true
+          },
+          {
+            "pair": "Shillong -> Silchar",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-05",
+              "SEG-NH6-06-ALT",
+              "SEG-NH6-07"
+            ],
+            "distance_km": 181.5,
+            "eta_minutes": 286.0,
+            "avg_risk_score": 28.6,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": false
+          },
+          {
+            "pair": "Jowai -> Silchar",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-06-ALT",
+              "SEG-NH6-07"
+            ],
+            "distance_km": 133.5,
+            "eta_minutes": 190.0,
+            "avg_risk_score": 23.4,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": false
+          },
+          {
+            "pair": "Nongpoh -> Silchar",
+            "routed": true,
+            "segments": [
+              "SEG-NH6-03",
+              "SEG-NH6-04",
+              "SEG-NH6-05",
+              "SEG-NH6-06-ALT",
+              "SEG-NH6-07"
+            ],
+            "distance_km": 225.5,
+            "eta_minutes": 380.0,
+            "avg_risk_score": 33.7,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": true
+          },
+          {
+            "pair": "Guwahati -> Tezpur",
+            "routed": true,
+            "segments": [
+              "SEG-NH15-01"
+            ],
+            "distance_km": 175.0,
+            "eta_minutes": 191.0,
+            "avg_risk_score": 12.3,
+            "drives_through_confirmed_closure": false,
+            "drives_through_elevated_caution_segment": false
+          }
+        ]
+      },
+      "risk_exposure_reduction_vs_naive_baseline_pct": 30.4
     }
-  },
-  "ner_link_ai_risk_weighted": {
-    "pairs_evaluated": 6,
-    "pairs_with_no_available_route": 5,
-    "pairs_routed_through_confirmed_closure": 0,
-    "stranding_rate_pct": 0.0,
-    "avg_risk_exposure": 30.9,
-    "avg_eta_minutes": 191.0,
-    "per_pair_detail": [
-      {
-        "pair": "Guwahati -> Silchar",
-        "routed": false,
-        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-      },
-      {
-        "pair": "Guwahati -> Shillong",
-        "routed": false,
-        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-      },
-      {
-        "pair": "Guwahati -> Jowai",
-        "routed": false,
-        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-      },
-      {
-        "pair": "Nongpoh -> Silchar",
-        "routed": false,
-        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-      },
-      {
-        "pair": "Umiam -> Silchar",
-        "routed": false,
-        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
-      },
-      {
-        "pair": "Guwahati -> Tezpur",
-        "routed": true,
-        "distance_km": 175.0,
-        "eta_minutes": 191.0,
-        "avg_risk_score": 30.9,
-        "drives_through_confirmed_closure": false
-      }
-    ]
-  },
-  "risk_exposure_reduction_vs_naive_baseline_pct": 47.0
+  }
 }
