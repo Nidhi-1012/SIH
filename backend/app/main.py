@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.config import settings
-from app.database import engine, get_db, Base
+from app.database import engine, get_db, Base, sync_missing_columns
 from app.models import RoadSegment, IncidentReport, WeatherObservation, VehicleTelemetry, Alert, Shipment, Driver
 from app.schemas import (
     RoadSegmentResponse, IncidentCreate, IncidentResponse, 
@@ -23,8 +23,11 @@ from app.services.auth_service import get_current_user, get_optional_user, requi
 from app.services import ml_risk_service
 from app.services.status_engine import evaluate_segment_state
 
-# Create database tables
+# Create database tables, then patch in any columns added to a model since
+# an existing local/deployed database was created (see sync_missing_columns
+# docstring -- this is not a substitute for a real migration tool).
 Base.metadata.create_all(bind=engine)
+sync_missing_columns()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
