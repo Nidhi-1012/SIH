@@ -2573,11 +2573,16 @@ function renderAdminList() {
 
 let emergencyModeActive = false;
 async function toggleEmergencyMode() {
+  if (!currentAdminSession || !currentAdminSession.access_token) {
+    showToast('Administrator session required. Please sign in.');
+    return;
+  }
   try {
-    // NOTE(gemini): The provided implementation does not include the Authorization header,
-    // which results in a 401 Unauthorized error because this endpoint is protected.
-    // I am implementing it exactly as written per instructions.
-    const res = await fetch('/api/v1/emergency-mode/toggle', { method: 'POST' });
+    const res = await fetch('/api/v1/emergency-mode/toggle', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + currentAdminSession.access_token },
+    });
+    if (res.status === 403) { showToast('This action requires an officer account.'); return; }
     if (!res.ok) { showToast('Failed to toggle emergency mode.'); return; }
     const data = await res.json();
     emergencyModeActive = data.emergency_mode;
