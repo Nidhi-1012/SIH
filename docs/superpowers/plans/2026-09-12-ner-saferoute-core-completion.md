@@ -1274,7 +1274,7 @@ git commit -m "feat: add real Dijkstra-based routing over the segment graph"
   route — this replaces the QA-found bug where garbage input silently
   returned HTTP 200 with made-up numbers.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `backend/tests/test_routing_service.py`:
 
@@ -1332,14 +1332,14 @@ def test_p0_priority_still_returns_two_ranked_routes():
     assert routes[0]["score_breakdown"]["priority_class"] == "P0"
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_routing_service.py -v`
 
 Expected: `FAIL` on `test_short_adjacent_trip_is_not_the_same_as_a_long_trip`
 (both currently return `656.1`) and possibly others.
 
-- [ ] **Step 3: Rewrite `routing_service.py`**
+- [x] **Step 3: Rewrite `routing_service.py`**
 
 Replace the entire contents of `backend/app/services/routing_service.py` with:
 
@@ -1574,19 +1574,19 @@ def calculate_candidate_routes(
     return routes
 ```
 
-- [ ] **Step 4: Run the tests again**
+- [x] **Step 4: Run the tests again**
 
 Run: `python -m pytest tests/test_routing_service.py -v`
 
 Expected: `3 passed`.
 
-- [ ] **Step 5: Run the full backend suite**
+- [x] **Step 5: Run the full backend suite**
 
 Run: `python -m pytest tests/ -v`
 
 Expected: all tests pass (should be 14 by this point).
 
-- [ ] **Step 6: Manual end-to-end verification (this is the bug that started this whole plan)**
+- [x] **Step 6: Manual end-to-end verification (this is the bug that started this whole plan)**
 
 ```bash
 cd backend
@@ -1603,7 +1603,7 @@ under 40km (not 656.1km, which is what both used to return).
 
 Stop the server afterward.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/services/routing_service.py backend/tests/test_routing_service.py
