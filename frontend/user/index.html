@@ -2652,21 +2652,21 @@ async function loadAlertsList() {
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
       document.getElementById('nav-alert-badge').textContent = data.length;
-      let html = '';
-      data.forEach(a => {
+      const cards = await Promise.all(data.map(async a => {
         const sev = (a.severity || 'Caution').toLowerCase();
         const cls = sev === 'critical' || sev === 'urgent' ? 'crit' : 'warn';
-        html += `
+        const translatedMessage = await getTranslatedAlertText(a.category, a.message || 'Drive with caution in this segment.');
+        return `
           <div class="alert-item ${cls}" id="alert-card-${a.alert_id}">
             <div>
               <div class="alert-title">${a.title || 'Road Hazard Warning'}</div>
-              <div class="alert-desc">${a.message || 'Drive with caution in this segment.'}</div>
+              <div class="alert-desc">${translatedMessage}</div>
               <div style="font-size:11px;color:var(--c-text-3);margin-top:6px;">${a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : 'Active Now'} · ${a.category || 'Disruption'}</div>
             </div>
             ${!a.acknowledged ? `<button class="btn-analyze-route" style="margin-top:8px;padding:8px;font-size:12px;" onclick="acknowledgeAlert('${a.alert_id}')">Acknowledge</button>` : ''}
           </div>`;
-      });
-      container.innerHTML = html;
+      }));
+      container.innerHTML = cards.join('');
       return;
     }
   } catch (e) {}
@@ -2832,12 +2832,33 @@ function showToast(msg) {
 }
 
 /* ---- LANGUAGE TOGGLE ---- */
+async function getTranslatedAlertText(alertCategory, englishText) {
+  if (currentLanguage === 'EN') return englishText;
+  const keyMap = { 'Road Blocked': 'ROAD_BLOCKED', 'High Risk': 'HIGH_RISK', 'Emergency Mode': 'EMERGENCY_MODE' };
+  const intentKey = keyMap[alertCategory];
+  if (!intentKey) return englishText; // no translation available for this category — show English rather than nothing
+  try {
+    const res = await fetch(`/api/v1/alerts/multilingual/${intentKey}`);
+    if (!res.ok) return englishText;
+    const data = await res.json();
+    const langCode = currentLanguage === 'HI' ? 'hi' : currentLanguage === 'AS' ? 'as' : 'en';
+    return data.translations[langCode] || englishText;
+  } catch (e) {
+    return englishText;
+  }
+}
+
 function toggleLang() {
   const langs = ['EN', 'HI', 'AS'];
   let idx = (langs.indexOf(currentLanguage) + 1) % langs.length;
   currentLanguage = langs[idx];
   document.getElementById('lang-btn').textContent = currentLanguage;
   showToast(`Language switched to ${currentLanguage}`);
+  // Force reload alerts list so translation updates immediately if the panel is open
+  const alertsContainer = document.getElementById('alerts-list');
+  if (alertsContainer && alertsContainer.innerHTML.includes('alert-item')) {
+      loadAlertsList();
+  }
 }
 
 /* ---- ROLE-RESTRICTED UI (Phase 5) ----

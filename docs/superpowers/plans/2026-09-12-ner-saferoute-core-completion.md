@@ -1859,13 +1859,13 @@ git commit -m "feat: wire alert acknowledge endpoint into the alerts panel"
 nothing — it's cosmetic. The backend already has real Hindi and Assamese
 strings for `ROAD_BLOCKED`, `HIGH_RISK`, and `EMERGENCY_MODE`.
 
-- [ ] **Step 1: Find the language-cycle function**
+- [x] **Step 1: Find the language-cycle function**
 
 Search the file for `currentLanguage` — there is a function that increments
 an index into a `langs` array and updates a `lang-btn` element's text. Locate
 its exact current name (do not assume a name — read it from the file).
 
-- [ ] **Step 2: Make alert messages actually translate**
+- [x] **Step 2: Make alert messages actually translate**
 
 In the function that renders the alerts list (found in Task 3.3, Step 1), the
 alert card currently shows `alert.title` and `alert.message` directly in
@@ -1918,13 +1918,13 @@ const cards = await Promise.all(data.map(async alert => {
 Preserve every other part of the existing template (`id`, acknowledge button
 from Task 3.3, styling) — only the message text becomes translated.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Switch language to HI, trigger a "Road Blocked" alert (e.g. approve a Critical
 incident as officer), confirm the alert card shows Hindi text (भूस्खलन...) not
 English. Switch back to EN, confirm it reverts.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/user/index.html
