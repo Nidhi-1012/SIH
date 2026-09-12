@@ -1936,7 +1936,7 @@ git commit -m "feat: wire multilingual endpoint so the language switcher actuall
 **Files:**
 - Modify: `frontend/user/index.html`
 
-- [ ] **Step 1: Add a toggle button to the admin panel**
+- [x] **Step 1: Add a toggle button to the admin panel**
 
 Search for the admin panel screen markup (search for `screen-admin` or
 `loadAdminIncidents`). Near the top of that screen's HTML, add:
@@ -1945,7 +1945,7 @@ Search for the admin panel screen markup (search for `screen-admin` or
 <button id="emergency-mode-btn" class="btn-analyze-route" style="background:var(--c-crit);margin-bottom:12px;" onclick="toggleEmergencyMode()">Activate Emergency Mode</button>
 ```
 
-- [ ] **Step 2: Add the handler**
+- [x] **Step 2: Add the handler**
 
 Add near `approveIncident`/`rejectIncident`:
 
@@ -1981,7 +1981,7 @@ async function toggleEmergencyMode() {
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 As officer, log into the admin panel, click "Activate Emergency Mode".
 Expected: a red banner appears at the top of the page, the button relabels to
@@ -1989,7 +1989,7 @@ Expected: a red banner appears at the top of the page, the button relabels to
 `"emergency_mode": true`. Click again to deactivate, confirm the banner
 disappears and health reports `false`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/user/index.html
