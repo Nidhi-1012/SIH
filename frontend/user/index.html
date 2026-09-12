@@ -2539,6 +2539,7 @@ function renderAdminList() {
         <div style="font-size:13px;color:var(--c-text);background:var(--c-bg);padding:10px 12px;border-radius:8px;line-height:1.4;">
           ${inc.description || inc.notes || 'Citizen field report with GPS fix.'}
         </div>
+        ${inc.photo_url ? `<img src="${inc.photo_url}" style="width:100%;border-radius:8px;margin-top:8px;max-height:200px;object-fit:cover;" alt="Field-reported photo">` : ''}
 
         <div style="font-size:11.5px;color:var(--c-text-2);display:flex;gap:12px;flex-wrap:wrap;">
           <span><b>Reported by:</b> ${inc.reporter || 'Citizen / Field Reporter'}</span>
@@ -2800,15 +2801,27 @@ function detectReportLocation() {
 }
 
 function handlePhotoSelect(input) {
-  if (!input.files || !input.files[0]) return;
   const file = input.files[0];
+  if (!file) return;
+  const img = new Image();
   const reader = new FileReader();
   reader.onload = (e) => {
-    reportPhotoBase64 = e.target.result;
-    document.getElementById('preview-img').src = e.target.result;
-    document.getElementById('report-photo-preview').style.display = 'block';
-    document.getElementById('photo-label-text').textContent = file.name;
-    document.getElementById('photo-upload-label').style.borderColor = 'var(--c-primary)';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxDim = 1024;
+      let { width, height } = img;
+      if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+      else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      reportPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+      if (document.getElementById('preview-img')) document.getElementById('preview-img').src = reportPhotoBase64;
+      document.getElementById('report-photo-preview').style.display = 'block';
+      document.getElementById('photo-label-text').textContent = file.name;
+      document.getElementById('photo-upload-label').style.borderColor = 'var(--c-primary)';
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -2854,7 +2867,7 @@ async function submitReport() {
         notes: note || `${selHazard} reported on active corridor`,
         lat: lat,
         lon: lon,
-        photo_url: reportPhotoBase64 ? '[photo attached]' : null,
+        photo_url: reportPhotoBase64 || null,
         reporter: 'Citizen Field Reporter'
       })
     });

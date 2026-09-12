@@ -176,15 +176,22 @@ async def create_incident_report(inc: IncidentCreate, db: Session = Depends(get_
     accountability for the officer queue); anonymous/guest reports fall back to
     the free-text `reporter` field, same as before.
     """
+    MAX_PHOTO_BASE64_CHARS = 3_000_000  # ~2.2MB decoded — enough for a compressed phone photo
+    if inc.photo_url and len(inc.photo_url) > MAX_PHOTO_BASE64_CHARS:
+        raise HTTPException(status_code=413, detail="Photo too large. Please retake or choose a smaller image.")
+
     # Auto-match to nearest road segment if not explicitly provided
     segment_id = inc.segment_id
     if not segment_id:
         all_segs = db.query(RoadSegment).all()
-        closest = min(
-            all_segs,
-            key=lambda s: ((s.start_lat - inc.lat)**2 + (s.start_lon - inc.lon)**2)
-        )
-        segment_id = closest.segment_id if closest else "SEG-NH6-02"
+        if all_segs:
+            closest = min(
+                all_segs,
+                key=lambda s: ((s.start_lat - inc.lat)**2 + (s.start_lon - inc.lon)**2)
+            )
+            segment_id = closest.segment_id
+        else:
+            segment_id = "SEG-NH6-02"
 
     reporter = reporter_user["email"] if reporter_user else (inc.reporter or "Citizen / Field Reporter")
 

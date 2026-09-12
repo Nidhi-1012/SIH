@@ -2116,7 +2116,7 @@ a literal placeholder string. The backend never receives the image.
 - No schema change needed — `IncidentCreate.photo_url: Optional[str]` already
   accepts an arbitrary string; a base64 data URL fits.
 
-- [ ] **Step 1: Write the backend guard test first**
+- [x] **Step 1: Write the backend guard test first**
 
 Create `backend/tests/test_incidents.py`:
 
@@ -2145,7 +2145,7 @@ def test_oversized_photo_is_rejected(client):
     assert res.status_code == 413
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_incidents.py -v`
 
@@ -2153,7 +2153,7 @@ Expected: `test_oversized_photo_is_rejected` fails — nothing currently checks
 size (the first test likely already passes, since the field already accepts
 any string; that's fine, it locks in current-and-correct behavior).
 
-- [ ] **Step 3: Add a size guard to `create_incident_report` in `main.py`**
+- [x] **Step 3: Add a size guard to `create_incident_report` in `main.py`**
 
 Find:
 
@@ -2174,13 +2174,13 @@ Add a guard immediately after the docstring, before the `segment_id = inc.segmen
         raise HTTPException(status_code=413, detail="Photo too large. Please retake or choose a smaller image.")
 ```
 
-- [ ] **Step 4: Run the backend tests again**
+- [x] **Step 4: Run the backend tests again**
 
 Run: `python -m pytest tests/test_incidents.py -v`
 
 Expected: `2 passed`.
 
-- [ ] **Step 5: Fix the frontend to send the real photo**
+- [x] **Step 5: Fix the frontend to send the real photo**
 
 In `frontend/user/index.html`, find the incident-submission function (search
 for `photo_url: reportPhotoBase64 ? '[photo attached]' : null`). Replace that
@@ -2190,7 +2190,7 @@ exact line with:
         photo_url: reportPhotoBase64 || null,
 ```
 
-- [ ] **Step 6: Add basic client-side compression before sending**
+- [x] **Step 6: Add basic client-side compression before sending**
 
 Sending a raw phone-camera photo (often 3-8MB) as base64 JSON is wasteful and
 will hit the new 413 guard. In the `handlePhotoSelect` function (search for
@@ -2224,7 +2224,7 @@ function handlePhotoSelect(input) {
 }
 ```
 
-- [ ] **Step 7: Show the real photo in the admin review panel**
+- [x] **Step 7: Show the real photo in the admin review panel**
 
 Find the admin incident list rendering (search for `loadAdminIncidents`).
 Find where each pending incident's card HTML is built. If it currently shows
@@ -2238,7 +2238,7 @@ ${incident.photo_url ? `<img src="${incident.photo_url}" style="width:100%;borde
 Insert this inside the existing incident-card template literal, in a sensible
 place near the notes/severity display — match the existing card's structure.
 
-- [ ] **Step 8: Verify end to end**
+- [x] **Step 8: Verify end to end**
 
 With the backend running: submit a field report with a real photo through the
 UI, then check as officer/admin that the photo actually renders in the
@@ -2246,7 +2246,7 @@ incident review list (not a placeholder string). Also confirm
 `curl http://127.0.0.1:8000/api/v1/incidents?status=Pending` shows a
 `photo_url` starting with `data:image/jpeg;base64,`.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add frontend/user/index.html backend/app/main.py backend/tests/test_incidents.py
