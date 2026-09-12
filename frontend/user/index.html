@@ -359,10 +359,17 @@ svg { display: block; flex-shrink: 0; }
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: none;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border) transparent;
 }
-.quick-chips-row::-webkit-scrollbar { display: none; }
+.quick-chips-row::-webkit-scrollbar { height: 5px; }
+.quick-chips-row::-webkit-scrollbar-track { background: transparent; }
+.quick-chips-row::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border-radius: var(--r-pill);
+}
+.quick-chips-row::-webkit-scrollbar-thumb:hover { background: var(--c-text-3); }
 .quick-chip {
   flex-shrink: 0;
   background: var(--c-bg);
@@ -816,10 +823,6 @@ svg { display: block; flex-shrink: 0; }
         <span class="brand-name">NER SafeRoute</span>
         <span class="brand-sub">Smart Logistics & Accessibility</span>
       </div>
-      <div class="live-pill">
-        <span class="live-dot"></span>
-        <span>AI Active</span>
-      </div>
     </div>
 
     <!-- NAVBAR CENTER: ALERTS, REPORT, SOS -->
@@ -873,7 +876,7 @@ svg { display: block; flex-shrink: 0; }
   <!-- WEATHER DETAILS POPOVER -->
   <div id="wx-popover" class="weather-popover">
     <div class="wx-pop-title">
-      <span>Guwahati–Shillong Weather</span>
+      <span id="wx-pop-label">Guwahati–Shillong Weather</span>
       <span style="color:var(--c-safe);font-weight:700;">LIVE</span>
     </div>
     <div class="wx-pop-row"><span class="wx-label">Air Temperature</span><span class="wx-val" id="wx-detail-temp">27.4°C</span></div>
@@ -1622,22 +1625,50 @@ function useCurrentLocationAsOrigin(e) {
 }
 
 /* ---- REAL LIVE WEATHER FETCHER ---- */
-async function fetchLiveWeather() {
+// Tracks whichever district the widget is currently showing so the 60s
+// auto-refresh (below) keeps polling the right place instead of silently
+// reverting to the default corridor every minute.
+let currentWeatherDistrict = 'Ri-Bhoi';
+let currentWeatherLabel = 'Guwahati–Shillong Weather';
+// Populated by loadLiveCorridors() -- real per-segment data, used to compute
+// a genuine landslide-vulnerability % instead of the fixed placeholder that
+// used to sit in the markup regardless of district or actual terrain data.
+let allSegmentsCache = [];
+
+function districtVulnerabilityPct(district) {
+  const matches = allSegmentsCache.filter(s => s.district === district);
+  if (!matches.length) return null;
+  const avg = matches.reduce((sum, s) => sum + (s.landslide_susceptibility || 0), 0) / matches.length;
+  return Math.round(avg * 100);
+}
+
+function updateLandslideVulnerability(district) {
+  const riskEl = document.getElementById('wx-detail-risk');
+  const pct = districtVulnerabilityPct(district);
+  if (!riskEl || pct == null) return;
+  const tier = pct >= 66 ? 'High' : pct >= 33 ? 'Moderate' : 'Low';
+  const color = pct >= 66 ? 'var(--c-crit)' : pct >= 33 ? 'var(--c-warn)' : 'var(--c-safe)';
+  riskEl.textContent = `${tier} (${pct}%)`;
+  riskEl.style.color = color;
+}
+
+async function fetchLiveWeather(district, label) {
+  if (district) { currentWeatherDistrict = district; currentWeatherLabel = label || district; }
   try {
-    // Default to the pilot corridor's most weather-exposed district; a
-    // future task could pass the user's actual selected district instead.
-    const res = await fetch('/api/v1/weather/Ri-Bhoi');
+    const res = await fetch(`/api/v1/weather/${encodeURIComponent(currentWeatherDistrict)}`);
     if (!res.ok) return;
     const data = await res.json();
 
     const temp = data.temperature ? `${Math.round(data.temperature)}°C` : '--';
     const rain24h = data.rainfall_24h != null ? `${data.rainfall_24h} mm/24h` : '--';
     const wind = data.wind_speed != null ? `${data.wind_speed} km/h` : '--';
-    
+
     // Update navbar chip
     const cond = data.rainfall_24h > 0 ? 'Rain' : 'Fair / Clear';
     document.getElementById('wx-nav-text').textContent = `${temp} · ${cond}`;
 
+    const labelEl = document.getElementById('wx-pop-label');
+    if (labelEl) labelEl.textContent = currentWeatherLabel;
     const tempEl = document.getElementById('wx-detail-temp');
     if (tempEl) tempEl.textContent = temp;
     const rainEl = document.getElementById('wx-detail-rain');
@@ -1648,6 +1679,7 @@ async function fetchLiveWeather() {
     if (windEl) windEl.textContent = wind;
     const timeEl = document.getElementById('wx-detail-time');
     if (timeEl) timeEl.textContent = data.source || 'Backend Sync';
+    updateLandslideVulnerability(currentWeatherDistrict);
   } catch (e) {
     // Weather widget fails silently — it's a nice-to-have, not core nav
   }
@@ -1674,6 +1706,8 @@ async function loadLiveCorridors() {
       return;
     }
     const segs = await res.json();
+    allSegmentsCache = Array.isArray(segs) ? segs : [];
+    updateLandslideVulnerability(currentWeatherDistrict);
 
     if (Array.isArray(segs) && segs.length > 0) {
       let htmlDesk = '';
@@ -1817,6 +1851,13 @@ async function findRoutes() {
           turns: (rt.turn_instructions && rt.turn_instructions.length) ? rt.turn_instructions : null,
           segments: (rt.segments && rt.segments.length) ? rt.segments : null
         }));
+        // Point the navbar weather widget at the destination's real district
+        // instead of leaving it fixed on the default Guwahati-Shillong corridor.
+        const destSegments = validRoutes[0].segments;
+        if (destSegments && destSegments.length) {
+          const destDistrict = destSegments[destSegments.length - 1].district;
+          fetchLiveWeather(destDistrict, `${destDistrict} Weather`);
+        }
         renderInlineRoutes(mergedRoutes, destInput);
         return;
       }
@@ -1972,6 +2013,7 @@ function clearRoutes() {
   if (routeLine) { routeLine.forEach(l => l.setMap(null)); routeLine = null; }
   routeHazardMarkers.forEach(m => m.setMap(null)); routeHazardMarkers = [];
   if (homeMap) { homeMap.setCenter({ lat: 25.9, lng: 91.9 }); homeMap.setZoom(9); }
+  fetchLiveWeather('Ri-Bhoi', 'Guwahati–Shillong Weather');
 }
 
 function quickDest(dest) {
@@ -3245,7 +3287,7 @@ window.addEventListener('DOMContentLoaded', () => {
   flushOfflineQueue();
   detectRealHomeLocation();
 
-  applyRoleBasedUI(wantsDriverMode);
+  applyRoleBasedUI();
 
   updateAdminBadgeCount();
   setInterval(updateAdminBadgeCount, 25000);

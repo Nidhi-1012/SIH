@@ -1,3 +1,4 @@
+import datetime
 import httpx
 import logging
 from typing import Dict, Any
@@ -25,7 +26,13 @@ class WeatherProviderInterface:
 class OpenMeteoWeatherProvider(WeatherProviderInterface):
     """Free live weather API fallback needing no API key."""
     async def fetch_district_weather(self, district: str) -> Dict[str, Any]:
-        coords = DISTRICT_COORDS.get(district, {"lat": 26.1445, "lon": 91.7362})
+        coords = DISTRICT_COORDS.get(district)
+        if coords is None:
+            # No coordinate mapping for this district -- fall back to the
+            # offline cache (clearly labeled as such) rather than silently
+            # returning Guwahati's live weather mislabeled with this district's name.
+            logger.warning(f"No coordinate mapping for district '{district}', using offline fallback data")
+            return self._fallback_data(district)
         url = (
             f"{settings.OPEN_METEO_BASE_URL}?"
             f"latitude={coords['lat']}&longitude={coords['lon']}"
@@ -42,8 +49,7 @@ class OpenMeteoWeatherProvider(WeatherProviderInterface):
                     r_1h = precip[0] if precip else 0.0
                     r_6h = sum(precip[:6]) if len(precip) >= 6 else 0.0
                     r_24h = sum(precip[:24]) if len(precip) >= 24 else 0.0
-                    
-                    import datetime
+
                     return {
                         "district": district,
                         "rainfall_1h": round(r_1h, 1),
@@ -73,7 +79,8 @@ class OpenMeteoWeatherProvider(WeatherProviderInterface):
             "forecast_24h_rain": r24 * 1.3,
             "wind_speed": 15.0,
             "temperature": 21.0,
-            "source": "IMD Adapter (Offline Fallback Cache)"
+            "source": "IMD Adapter (Offline Fallback Cache)",
+            "timestamp": datetime.datetime.utcnow().isoformat()
         }
 
 class IMDWeatherProvider(WeatherProviderInterface):
