@@ -2001,7 +2001,7 @@ git commit -m "feat: wire emergency mode toggle into the admin panel with a visi
 **Files:**
 - Modify: `frontend/user/index.html`
 
-- [ ] **Step 1: Add a "Track Shipment" screen**
+- [x] **Step 1: Add a "Track Shipment" screen**
 
 Search for how other screens are structured (search for `class="screen"` to
 find the pattern — each screen is a `<div class="screen" id="screen-...">`).
@@ -2015,7 +2015,7 @@ Following that exact pattern, add a new screen before `</body>`:
 </div>
 ```
 
-- [ ] **Step 2: Add the tracking JS**
+- [x] **Step 2: Add the tracking JS**
 
 Add near `initHomeMap`:
 
@@ -2060,7 +2060,7 @@ async function pollVehiclePosition() {
 }
 ```
 
-- [ ] **Step 3: Add a nav entry point**
+- [x] **Step 3: Add a nav entry point**
 
 Find `function switchScreen(screenName) {` — this function is already called
 from other nav buttons via `onclick="switchScreen('...')"`. Find where other
@@ -2082,14 +2082,14 @@ the SOS button from Task 3.1's search) that calls
 pattern exactly (same classes as neighboring buttons) rather than inventing
 new styling.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Navigate to the tracking screen. Expected: a Leaflet map appears, a marker
 shows near Guwahati and visibly moves every ~3 seconds toward Shillong,
 "Simulated position" is clearly labeled (never presented as real GPS —
 matches the PRD's anti-fabrication rule), no console errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/user/index.html

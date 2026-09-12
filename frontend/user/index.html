@@ -793,6 +793,13 @@ svg { display: block; flex-shrink: 0; }
         <span class="btn-text">Report Hazard</span>
       </button>
 
+      <button class="nav-item-btn" onclick="switchScreen('tracking')" title="Live Shipment Tracking">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>
+        </svg>
+        <span class="btn-text">Track</span>
+      </button>
+
       <button class="nav-sos-btn" onclick="openSOS()" title="Emergency Assistance">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -1386,6 +1393,45 @@ async function showSegmentRiskInfo(segmentId, latLng, map) {
     `);
   } catch (e) {
     info.setContent('<div style="font-size:12px;padding:4px;color:#ff3b30;">Unable to load live conditions for this segment.</div>');
+  }
+}
+
+let trackingMap = null;
+let trackingMarker = null;
+let trackingPollTimer = null;
+
+function initTrackingScreen() {
+  if (!trackingMap) {
+    trackingMap = L.map('tracking-map').setView([26.1445, 91.7362], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(trackingMap);
+  }
+  pollVehiclePosition();
+  stopTrackingPoll();
+  trackingPollTimer = setInterval(pollVehiclePosition, 3000);
+}
+
+function stopTrackingPoll() {
+  if (trackingPollTimer) { clearInterval(trackingPollTimer); trackingPollTimer = null; }
+}
+
+async function pollVehiclePosition() {
+  try {
+    const res = await fetch('/api/v1/telemetry/simulate?vehicle_id=VEH-MED-01');
+    if (!res.ok) return;
+    const data = await res.json();
+    const latlng = [data.lat, data.lon];
+    if (!trackingMarker) {
+      trackingMarker = L.marker(latlng).addTo(trackingMap);
+    } else {
+      trackingMarker.setLatLng(latlng);
+    }
+    trackingMap.panTo(latlng);
+    const infoEl = document.getElementById('tracking-info');
+    if (infoEl) {
+      infoEl.innerHTML = `<b>${data.cargo}</b><br>Vehicle: ${data.vehicle_id} · Speed: ${data.speed_kmh} km/h<br><span style="color:var(--c-text-3);font-size:11px;">Simulated position — updates every 3s</span>`;
+    }
+  } catch (e) {
+    // silent — tracking is best-effort
   }
 }
 
@@ -2677,6 +2723,11 @@ function switchScreen(screenName) {
     document.getElementById('screen-nav').classList.add('active');
     const tnav = document.querySelector('.apple-nav') || document.querySelector('header'); if(tnav) tnav.style.display='none';
   }
+  if (screenName === 'tracking') {
+    initTrackingScreen();
+  } else {
+    stopTrackingPoll();
+  }
 }
 
 /* ---- ALERTS LOADER ---- */
@@ -3086,5 +3137,22 @@ async function fetchAlertsBackground() {
     <button class="btn-analyze-route" style="margin-top:16px;" onclick="closeRiskModal()">Close</button>
   </div>
 </div>
+<!-- TRACKING SCREEN -->
+<div class="screen" id="screen-tracking">
+  <div class="inner-hdr">
+    <button class="back-btn" onclick="switchScreen('home')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <div style="flex:1;">
+      <div class="inner-hdr-title">Live Shipment Tracking</div>
+      <div class="inner-hdr-sub">Simulated position — not real GPS</div>
+    </div>
+  </div>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <div id="tracking-map" style="height:300px;margin:0 16px;border-radius:var(--r-md);overflow:hidden;"></div>
+  <div id="tracking-info" style="margin:16px;font-size:13px;color:var(--c-text-2);">Loading vehicle position...</div>
+</div>
 </body>
+
 </html>
