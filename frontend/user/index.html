@@ -1507,30 +1507,32 @@ function useCurrentLocationAsOrigin(e) {
 /* ---- REAL LIVE WEATHER FETCHER ---- */
 async function fetchLiveWeather() {
   try {
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=26.1445&longitude=91.7362&current_weather=true&hourly=precipitation,relativehumidity_2m';
-    const res = await fetch(url);
+    // Default to the pilot corridor's most weather-exposed district; a
+    // future task could pass the user's actual selected district instead.
+    const res = await fetch('/api/v1/weather/Ri-Bhoi');
     if (!res.ok) return;
     const data = await res.json();
-    const cw = data.current_weather || {};
 
-    const temp = cw.temperature ? `${Math.round(cw.temperature)}°C` : '27°C';
-    const wind = cw.windspeed ? `${cw.windspeed} km/h` : '2.0 km/h';
-    const isRain = (cw.weathercode && cw.weathercode >= 51);
-    const cond = isRain ? 'Light Rain' : 'Fair / Clear';
-
+    const temp = data.temperature ? `${Math.round(data.temperature)}°C` : '--';
+    const rain24h = data.rainfall_24h != null ? `${data.rainfall_24h} mm/24h` : '--';
+    const wind = data.wind_speed != null ? `${data.wind_speed} km/h` : '--';
+    
     // Update navbar chip
+    const cond = data.rainfall_24h > 0 ? 'Rain' : 'Fair / Clear';
     document.getElementById('wx-nav-text').textContent = `${temp} · ${cond}`;
 
-    // Update popover fields
-    document.getElementById('wx-detail-temp').textContent = `${cw.temperature || 27.4}°C`;
-    document.getElementById('wx-detail-cond').textContent = cond;
-    document.getElementById('wx-detail-wind').textContent = wind;
-    document.getElementById('wx-detail-rain').textContent = isRain ? '4.2 mm/h' : '0.0 mm/h';
-    document.getElementById('wx-detail-risk').textContent = isRain ? 'Caution (45%)' : 'Low (18%)';
-    document.getElementById('wx-detail-risk').style.color = isRain ? 'var(--c-warn)' : 'var(--c-safe)';
-    document.getElementById('wx-detail-time').textContent = 'Synced Live with Radar';
+    const tempEl = document.getElementById('wx-detail-temp');
+    if (tempEl) tempEl.textContent = temp;
+    const rainEl = document.getElementById('wx-detail-rain');
+    if (rainEl) rainEl.textContent = rain24h;
+    const condEl = document.getElementById('wx-detail-cond');
+    if (condEl) condEl.textContent = cond;
+    const windEl = document.getElementById('wx-detail-wind');
+    if (windEl) windEl.textContent = wind;
+    const timeEl = document.getElementById('wx-detail-time');
+    if (timeEl) timeEl.textContent = data.source || 'Backend Sync';
   } catch (e) {
-    console.warn('Weather fetch fallback to cached state', e);
+    // Weather widget fails silently — it's a nice-to-have, not core nav
   }
 }
 

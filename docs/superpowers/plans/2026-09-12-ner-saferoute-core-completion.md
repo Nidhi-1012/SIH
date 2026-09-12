@@ -1741,7 +1741,7 @@ coordinates (26.1445, 91.7362) always — regardless of where the user actually
 is or which corridor they're viewing. It also completely bypasses the
 backend's IMD-adapter/fallback logic in `weather_service.py`.
 
-- [ ] **Step 1: Replace `fetchLiveWeather`**
+- [x] **Step 1: Replace `fetchLiveWeather`**
 
 Find the function `async function fetchLiveWeather() {`. Replace its entire
 body with:
@@ -1773,13 +1773,13 @@ element IDs it currently updates for temperature/rain display — if they're
 not `weather-temp`/`weather-rain`, use whatever IDs the existing DOM elements
 actually have instead of introducing new ones.
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 With the backend running, load the app, open browser devtools → Network tab,
 confirm a request to `/api/v1/weather/Ri-Bhoi` fires (not a request to
 `api.open-meteo.com`), and that it returns 200.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add frontend/user/index.html
