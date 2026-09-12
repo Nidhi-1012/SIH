@@ -414,12 +414,14 @@ def _get_or_create_driver(db: Session, user_id: str, email: Optional[str]) -> Dr
     driver = db.query(Driver).filter(Driver.supabase_user_id == user_id).first()
     if driver:
         return driver
-    driver = Driver(
-        driver_code=f"DRV-{db.query(Driver).count() + 1:03d}",
-        supabase_user_id=user_id,
-        email=email,
-    )
+    # driver_code is derived from the row's own primary key (assigned via
+    # flush, before commit) rather than a row count -- a count-based code
+    # collides under concurrent signups or after any row is ever deleted,
+    # and driver_code is UNIQUE, so that would 500 instead of just working.
+    driver = Driver(driver_code="PENDING", supabase_user_id=user_id, email=email)
     db.add(driver)
+    db.flush()
+    driver.driver_code = f"DRV-{driver.id:03d}"
     db.commit()
     db.refresh(driver)
     return driver
