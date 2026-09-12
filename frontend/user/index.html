@@ -946,6 +946,18 @@ svg { display: block; flex-shrink: 0; }
       <!-- MOBILE BOTTOM DRAWER -->
       <div class="mobile-bottom-drawer" id="mob-sheet">
         <div style="width:36px;height:4px;background:var(--c-border);border-radius:2px;margin:0 auto 14px;"></div>
+        <div class="input-group" style="margin-bottom:10px;position:relative;">
+          <div class="pin-origin"></div>
+          <input id="mob-origin" type="text" placeholder="Your Location" autocomplete="off"
+            oninput="originOverrideCoords=null;"/>
+          <button
+            onclick="useCurrentLocationAsOrigin(event)"
+            title="Use Current Location"
+            style="position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:none;border:none;cursor:pointer;color:var(--c-primary);"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+          </button>
+        </div>
         <div class="input-group" style="margin-bottom:10px;">
           <div class="pin-dest"></div>
           <input id="mob-dest" type="text" placeholder="Where do you want to go?" onkeydown="if(event.key==='Enter')findRoutes()"/>
@@ -1528,10 +1540,13 @@ function hideOriginDropdown() {
 }
 function useCurrentLocationAsOrigin(e) {
   if (e) e.preventDefault();
-  const input = document.getElementById('desk-origin');
-  input.value = 'Detecting your location…';
+  const deskInput = document.getElementById('desk-origin');
+  const mobInput = document.getElementById('mob-origin');
+  if (deskInput) deskInput.value = 'Detecting your location…';
+  if (mobInput) mobInput.value = 'Detecting your location…';
   if (!navigator.geolocation) {
-    input.value = '';
+    if (deskInput) deskInput.value = '';
+    if (mobInput) mobInput.value = '';
     showToast('Geolocation is not available on this device.');
     return;
   }
@@ -1540,13 +1555,16 @@ function useCurrentLocationAsOrigin(e) {
       pos.lat = p.coords.latitude;
       pos.lon = p.coords.longitude;
       originOverrideCoords = `${pos.lat},${pos.lon}`;
-      input.value = 'Current Location';
+      if (deskInput) deskInput.value = 'Current Location';
+      if (mobInput) mobInput.value = 'Current Location';
       if (homeUserMarker) homeUserMarker.setPosition({ lat: pos.lat, lng: pos.lon });
       if (homeMap) homeMap.panTo({ lat: pos.lat, lng: pos.lon });
-      document.getElementById('origin-dropdown').style.display = 'none';
+      const dd = document.getElementById('origin-dropdown');
+      if (dd) dd.style.display = 'none';
     },
     () => {
-      input.value = '';
+      if (deskInput) deskInput.value = '';
+      if (mobInput) mobInput.value = '';
       showToast('Could not detect your location — check location permissions.');
     },
     { enableHighAccuracy: true, timeout: 8000 }
@@ -1650,11 +1668,40 @@ async function loadLiveCorridors() {
 }
 
 /* ---- REAL ROUTE SEARCH & INLINE DISPLAY ---- */
+// Resolves free-typed place text to real "lat,lon" coordinates via Google's
+// Geocoder (bundled with the base Maps JS API already loaded for the map --
+// no extra library needed). This is what lets the route planner work for any
+// real place, not just the ~16 names the backend's own NER_GEO_LOOKUP knows.
+// Input that's already coordinates (from "Use Current Location") passes
+// through untouched.
+function geocodeToLatLon(query) {
+  return new Promise((resolve) => {
+    if (!query) { resolve(null); return; }
+    const coordMatch = query.match(/^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$/);
+    if (coordMatch) { resolve(query.trim()); return; }
+    if (!window.google || !google.maps || !google.maps.Geocoder) { resolve(null); return; }
+    const geocoder = new google.maps.Geocoder();
+    // Bias to the NER pilot region so "Shillong" etc. resolve to the right
+    // place rather than a same-named location elsewhere in the world.
+    const nerBounds = new google.maps.LatLngBounds({ lat: 24.0, lng: 89.5 }, { lat: 29.5, lng: 97.5 });
+    geocoder.geocode({ address: query, bounds: nerBounds }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const loc = results[0].geometry.location;
+        resolve(`${loc.lat()},${loc.lng()}`);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
 async function findRoutes() {
   // No hardcoded "Guwahati" fallback — the user's typed origin, "Use Current
   // Location" detection, or nothing at all (and we ask for one). See
   // useCurrentLocationAsOrigin() / detectRealHomeLocation() above.
-  const originInput = originOverrideCoords || document.getElementById('desk-origin').value.trim();
+  const originInput = originOverrideCoords
+    || document.getElementById('desk-origin').value.trim()
+    || document.getElementById('mob-origin').value.trim();
   const destInput = document.getElementById('desk-dest').value.trim() || document.getElementById('mob-dest').value.trim();
   if (!destInput) {
     showToast('Please type or select a destination');
@@ -1668,51 +1715,73 @@ async function findRoutes() {
 
   showToast('Analyzing real routes for hazards, weather & risk...');
 
-  const key = Object.keys(DB).find(k => destInput.toLowerCase().includes(k)) || 'shillong';
-  const localData = DB[key];
+  // Geocode whatever was typed to real coordinates first -- this is the fix
+  // for routes only ever showing one default: previously any destination the
+  // backend's small hardcoded town list didn't recognize returned an empty
+  // "out of coverage" response, which then silently got replaced with a
+  // canned Shillong/Silchar/Tawang route below. Sending real coordinates
+  // instead means the backend can actually resolve almost anything.
+  const [originResolved, destResolved] = await Promise.all([
+    geocodeToLatLon(originInput),
+    geocodeToLatLon(destInput),
+  ]);
+  const originForApi = originResolved || originInput;
+  const destForApi = destResolved || destInput;
 
   try {
     const res = await fetch('/api/v1/route', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ origin: originInput, destination: destInput, priority_class: 'P2' })
-    }).catch(() => null);
+      body: JSON.stringify({ origin: originForApi, destination: destForApi, priority_class: 'P2' })
+    });
 
-    if (res && res.ok) {
+    if (res.ok) {
       const data = await res.json();
       const routesList = Array.isArray(data) ? data : (data.routes || []);
+      // A real route always has real distance and real geometry. The "Out of
+      // Pilot Corridor" / "No Route Found" placeholders return zeroed/null
+      // fields on purpose -- treat those as no data, never patch them with
+      // canned numbers that have nothing to do with what was actually typed.
+      const validRoutes = routesList.filter(rt => rt.distance_km > 0 && rt.geometry_points && rt.geometry_points.length > 0);
 
-      if (routesList.length > 0) {
-        const mergedRoutes = routesList.map((rt, i) => {
-          const fallback = localData ? localData.routes[i % localData.routes.length] : null;
-          const pts = (rt.geometry_points && rt.geometry_points.length > 0) ? rt.geometry_points : (fallback ? fallback.pts : []);
-          return {
-            pts: pts,
-            overall: Math.round(rt.overall_risk_score || rt.risk_score || (fallback ? fallback.overall : 22)),
-            ls: Math.round(rt.score_breakdown?.landslide_risk || (fallback ? fallback.ls : 14)),
-            rain: Math.round(rt.score_breakdown?.weather_risk || (fallback ? fallback.rain : 12)),
-            flood: Math.round(rt.score_breakdown?.flood_risk || (fallback ? fallback.flood : 4)),
-            dist: rt.distance_km ? `${rt.distance_km} km` : (fallback ? fallback.dist : '92 km'),
-            time: rt.eta_minutes ? `${Math.floor(rt.eta_minutes / 60)}h ${Math.round(rt.eta_minutes % 60)}m` : (fallback ? fallback.time : '2h 10m'),
-            via: rt.name || (fallback ? fallback.via : 'Safe Highway'),
-            road: 'Good NH Standard',
-            id: rt.route_id || `r-${i}`,
-            // Real GraphHopper turn-by-turn + the real RoadSegment records behind
-            // this route's score — used for the nav screen, never fabricated.
-            turns: (rt.turn_instructions && rt.turn_instructions.length) ? rt.turn_instructions : null,
-            segments: (rt.segments && rt.segments.length) ? rt.segments : null
-          };
-        });
+      if (validRoutes.length > 0) {
+        const mergedRoutes = validRoutes.map((rt, i) => ({
+          pts: rt.geometry_points,
+          overall: Math.round(rt.overall_risk_score ?? 0),
+          ls: Math.round(rt.score_breakdown?.landslide_risk ?? 0),
+          rain: Math.round(rt.score_breakdown?.weather_risk ?? 0),
+          flood: Math.round(rt.score_breakdown?.flood_risk ?? 0),
+          dist: `${rt.distance_km} km`,
+          time: `${Math.floor(rt.eta_minutes / 60)}h ${Math.round(rt.eta_minutes % 60)}m`,
+          via: rt.name || 'Route',
+          road: 'Good NH Standard',
+          id: rt.route_id || `r-${i}`,
+          // Real GraphHopper turn-by-turn + the real RoadSegment records behind
+          // this route's score — used for the nav screen, never fabricated.
+          turns: (rt.turn_instructions && rt.turn_instructions.length) ? rt.turn_instructions : null,
+          segments: (rt.segments && rt.segments.length) ? rt.segments : null
+        }));
         renderInlineRoutes(mergedRoutes, destInput);
         return;
       }
+
+      showToast(`No route coverage for "${destInput}" yet — it's outside the current pilot corridor.`);
+      return;
     }
   } catch (e) {
-    console.warn('Backend routing fallback to verified pilot graph', e);
+    console.warn('Backend unreachable, checking offline cached routes', e);
   }
 
-  // Fallback to local verified routes
-  renderInlineRoutes(localData.routes, destInput);
+  // Reached only on an actual network/connection failure (not a successful-
+  // but-empty response, handled above) -- a small offline cache for a few
+  // well-known destinations, for low-network areas per the problem statement.
+  const key = Object.keys(DB).find(k => destInput.toLowerCase().includes(k));
+  if (key) {
+    showToast('No connection — showing offline cached route data.');
+    renderInlineRoutes(DB[key].routes, destInput);
+  } else {
+    showToast('Cannot reach the server, and no offline data is cached for this destination.');
+  }
 }
 
 function renderInlineRoutes(routes, destName) {
