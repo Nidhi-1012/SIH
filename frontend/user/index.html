@@ -1573,7 +1573,7 @@ async function loadLiveCorridors() {
               <div class="corridor-name">${name}</div>
               <div class="corridor-sub">${sub}</div>
             </div>
-            <span class="risk-tag ${cls}">${stat} ${risk}%</span>
+            <span class="risk-tag ${cls}" style="cursor:pointer;" onclick="showRiskExplanation('${s.segment_id}')">${stat} ${risk}%</span>
           </div>`;
 
         htmlMob += `
@@ -1582,7 +1582,7 @@ async function loadLiveCorridors() {
               <div class="corridor-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
               <div class="corridor-sub">${stat}</div>
             </div>
-            <span class="risk-tag ${cls}">${risk}%</span>
+            <span class="risk-tag ${cls}" style="cursor:pointer;" onclick="showRiskExplanation('${s.segment_id}')">${risk}%</span>
           </div>`;
       });
 
@@ -2788,6 +2788,38 @@ function closeSOS(e) {
   }
 }
 
+/* ---- RISK EXPLANATION ---- */
+async function showRiskExplanation(segmentId) {
+  const modal = document.getElementById('risk-modal');
+  const body = document.getElementById('risk-modal-body');
+  modal.classList.add('open');
+  body.innerHTML = 'Loading...';
+  try {
+    const res = await fetch(`/api/v1/segments/${segmentId}/risk`);
+    if (!res.ok) throw new Error('risk fetch failed');
+    const data = await res.json();
+    const sourceLabel = data.risk_source === 'ml_model' ? 'AI Model Prediction' : 'Rule-Based Estimate (model unavailable)';
+    body.innerHTML = `
+      <div style="font-weight:700;font-size:15px;color:var(--c-text);margin-bottom:4px;">${data.district} — Risk ${data.risk_score}/100</div>
+      <div style="font-size:11px;color:var(--c-text-3);margin-bottom:12px;">${sourceLabel} · Confidence ${Math.round(data.confidence * 100)}%</div>
+      <div style="font-size:12px;margin-bottom:8px;">Disruption probability: 6h ${Math.round(data.disruption_prob_6h * 100)}% · 12h ${Math.round(data.disruption_prob_12h * 100)}% · 24h ${Math.round(data.disruption_prob_24h * 100)}%</div>
+      ${data.top_factors.map(f => `
+        <div style="padding:8px 0;border-top:1px solid var(--c-border);">
+          <div style="font-weight:600;font-size:12.5px;">${f.factor}</div>
+          <div style="font-size:11.5px;color:var(--c-text-2);">${f.impact}</div>
+        </div>
+      `).join('')}
+    `;
+  } catch (e) {
+    body.innerHTML = '<div style="color:var(--c-crit);">Could not load risk data.</div>';
+  }
+}
+function closeRiskModal(e) {
+  if (!e || e.target === document.getElementById('risk-modal') || e.currentTarget) {
+    document.getElementById('risk-modal').classList.remove('open');
+  }
+}
+
 /* ---- TOAST NOTIFICATION ---- */
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -2973,5 +3005,13 @@ async function fetchAlertsBackground() {
 }
 
 </script>
+<!-- RISK EXPLANATION MODAL -->
+<div class="modal-bg" id="risk-modal" onclick="closeRiskModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="card-title">Risk Factor Breakdown</div>
+    <div id="risk-modal-body" style="margin-top:12px;font-size:13px;color:var(--c-text-2);">Loading...</div>
+    <button class="btn-analyze-route" style="margin-top:16px;" onclick="closeRiskModal()">Close</button>
+  </div>
+</div>
 </body>
 </html>

@@ -1636,7 +1636,7 @@ automated test. Do not skip verification because it's manual.
 - Produces: a new global function `showRiskExplanation(segmentId)` and a new
   modal `<div id="risk-explanation-modal">`.
 
-- [ ] **Step 1: Add the modal markup**
+- [x] **Step 1: Add the modal markup**
 
 Find the closing `</body>` tag in `frontend/user/index.html`. Immediately
 before it, insert:
@@ -1655,7 +1655,7 @@ before it, insert:
 (This reuses the existing `.modal-bg` / `.modal-card` / `.btn-analyze-route`
 classes already defined for the SOS modal — do not add new CSS.)
 
-- [ ] **Step 2: Add the JS functions**
+- [x] **Step 2: Add the JS functions**
 
 Find the `function closeSOS(e) {` function (search for it). Immediately after
 its closing `}`, insert:
@@ -1694,7 +1694,7 @@ function closeRiskModal(e) {
 }
 ```
 
-- [ ] **Step 3: Make an existing risk-score display clickable**
+- [x] **Step 3: Make an existing risk-score display clickable**
 
 Search for where segment risk scores are rendered in the live-corridor list
 (search for `risk_score` inside a template-literal string that builds list/card
@@ -1716,14 +1716,14 @@ differ slightly from this example; the important part is adding
 `onclick="showRiskExplanation('${seg.segment_id}')"` and `cursor:pointer`
 wherever a segment's numeric risk score is already being rendered.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Open the app in a browser with the backend running, click a risk score badge.
 Expected: the modal opens and shows real factor data matching what
 `curl http://127.0.0.1:8000/api/v1/segments/SEG-NH6-06/risk` returns for that
 same segment — check the browser console shows no errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/user/index.html
