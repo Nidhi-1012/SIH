@@ -23,11 +23,13 @@ class FakeSegment:
 
 
 def make_linear_chain():
-    # A -> B -> C -> D, plus a longer, safer A -> E -> D bypass
+    # A -> B -> C -> D (27km total), plus a longer, safer A -> E -> D bypass (30km) —
+    # the direct chain must be unambiguously shorter so distance_weight has one
+    # correct answer, not a tie Dijkstra could break either way.
     return [
-        FakeSegment("A-B", (0.0, 0.0), (0.0, 1.0), length_km=10.0, risk_score=80.0, status="Caution"),
-        FakeSegment("B-C", (0.0, 1.0), (0.0, 2.0), length_km=10.0, risk_score=90.0, status="Caution"),
-        FakeSegment("C-D", (0.0, 2.0), (0.0, 3.0), length_km=10.0, risk_score=20.0, status="Open"),
+        FakeSegment("A-B", (0.0, 0.0), (0.0, 1.0), length_km=9.0, risk_score=80.0, status="Caution"),
+        FakeSegment("B-C", (0.0, 1.0), (0.0, 2.0), length_km=9.0, risk_score=90.0, status="Caution"),
+        FakeSegment("C-D", (0.0, 2.0), (0.0, 3.0), length_km=9.0, risk_score=20.0, status="Open"),
         FakeSegment("A-E", (0.0, 0.0), (1.0, 1.5), length_km=15.0, risk_score=10.0, status="Open"),
         FakeSegment("E-D", (1.0, 1.5), (0.0, 3.0), length_km=15.0, risk_score=10.0, status="Open"),
     ]
@@ -36,11 +38,6 @@ def make_linear_chain():
 def test_shortest_distance_path_takes_the_direct_chain():
     segs = make_linear_chain()
     path = dijkstra_route(segs, (0.0, 0.0), (0.0, 3.0), weight_fn=distance_weight)
-    # NOTE(gemini): This test has an equal-weight tie: A→B→C→D = 30km and A→E→D = 30km.
-    # Dijkstra finds A-E-D first (E is visited at cost 15, D reached at cost 30 from E-D)
-    # before C-D pushes D at cost 30 from the chain. So Dijkstra returns the bypass.
-    # The test is incorrect — both paths have identical weight under distance_weight.
-    # The 4 other tests confirm correct Dijkstra behavior. This step's box is left unchecked.
     assert [s.segment_id for s in path] == ["A-B", "B-C", "C-D"]
 
 
@@ -67,6 +64,6 @@ def test_route_metrics_sums_correctly():
     segs = make_linear_chain()
     path = dijkstra_route(segs, (0.0, 0.0), (0.0, 3.0), weight_fn=distance_weight)
     metrics = route_metrics(path)
-    assert metrics["distance_km"] == 30.0
+    assert metrics["distance_km"] == 27.0
     assert metrics["eta_minutes"] > 0
     assert 0 < metrics["avg_risk_score"] <= 100
