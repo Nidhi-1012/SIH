@@ -1033,7 +1033,7 @@ unreachable (which is always, in this repo — no OSM extract exists).
   - `route_metrics(path: List[RoadSegment]) -> Dict[str, float]` — returns
     `{"distance_km": float, "eta_minutes": float, "avg_risk_score": float}`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `backend/tests/test_graph_routing_service.py`:
 
@@ -1107,13 +1107,13 @@ def test_route_metrics_sums_correctly():
     assert 0 < metrics["avg_risk_score"] <= 100
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_graph_routing_service.py -v`
 
 Expected: `FAIL` — `ModuleNotFoundError`.
 
-- [ ] **Step 3: Write `graph_routing_service.py`**
+- [x] **Step 3: Write `graph_routing_service.py`**
 
 Create `backend/app/services/graph_routing_service.py`:
 
@@ -1243,13 +1243,13 @@ def route_metrics(path: List[RoadSegment]) -> Dict[str, float]:
     }
 ```
 
-- [ ] **Step 4: Run the tests again**
+- [ ] **Step 4: Run the tests again** (4/5 pass — test_shortest_distance_path_takes_the_direct_chain left unchecked: equal-weight tie between both paths, see # NOTE(gemini) in test file)
 
 Run: `python -m pytest tests/test_graph_routing_service.py -v`
 
 Expected: `6 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/graph_routing_service.py backend/tests/test_graph_routing_service.py
