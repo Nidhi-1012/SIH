@@ -22,6 +22,12 @@ NER_GEO_LOOKUP = {
     "nongpoh": (25.9001, 91.8805),
     "umiam": (25.6667, 91.9000),
     "tezpur": (26.6338, 92.8000),
+    "bhalukpong": (27.0125, 92.6410),
+    "nalbari": (26.4465, 91.4364),
+    "barpeta": (26.3229, 91.0064),
+    "nagaon": (26.3480, 92.6840),
+    "dibrugarh": (27.4728, 94.9120),
+    "kohima": (25.6751, 94.1086),
 }
 
 # If a resolved origin/destination is farther than this from any known
