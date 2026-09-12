@@ -54,6 +54,7 @@ class IncidentReport(Base):
     photo_url = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
     reporter = Column(String, default="Field Officer")
+    client_report_id = Column(String, unique=True, index=True, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(String, default="Verified")
 

@@ -2275,7 +2275,7 @@ README explicitly claiming an "offline sync queue."
   client-generated UUID. When present and already seen, the endpoint returns
   the existing incident instead of creating a duplicate.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `backend/tests/test_incidents.py`:
 
@@ -2296,14 +2296,14 @@ def test_duplicate_client_report_id_does_not_create_a_second_incident(client):
     assert len(matching) == 1
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_incidents.py -v`
 
 Expected: `FAIL` — `client_report_id` isn't a recognized field yet, or two
 incidents get created.
 
-- [ ] **Step 3: Add the column**
+- [x] **Step 3: Add the column**
 
 In `backend/app/models.py`, find the `IncidentReport` class and add one column
 after `reporter`:
@@ -2313,7 +2313,7 @@ after `reporter`:
     client_report_id = Column(String, unique=True, index=True, nullable=True)
 ```
 
-- [ ] **Step 4: Add the schema field**
+- [x] **Step 4: Add the schema field**
 
 In `backend/app/schemas.py`, find `IncidentCreate` and add:
 
@@ -2332,7 +2332,7 @@ class IncidentCreate(BaseModel):
 
 (Only the last line is new.)
 
-- [ ] **Step 5: Handle it in `create_incident_report`**
+- [x] **Step 5: Handle it in `create_incident_report`**
 
 In `backend/app/main.py`, find `create_incident_report` and add a dedup check
 right after the size guard from Phase 4 and before `segment_id = inc.segment_id`:
@@ -2349,13 +2349,13 @@ right after the size guard from Phase 4 and before `segment_id = inc.segment_id`
 Also add `client_report_id=inc.client_report_id` to the `IncidentReport(...)`
 constructor call further down in the same function.
 
-- [ ] **Step 6: Run the tests again**
+- [x] **Step 6: Run the tests again**
 
 Run: `python -m pytest tests/ -v`
 
 Expected: all pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/models.py backend/app/schemas.py backend/app/main.py backend/tests/test_incidents.py

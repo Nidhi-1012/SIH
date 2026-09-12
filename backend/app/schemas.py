@@ -35,6 +35,7 @@ class IncidentCreate(BaseModel):
     photo_url: Optional[str] = None
     notes: Optional[str] = None
     reporter: Optional[str] = None
+    client_report_id: Optional[str] = None
 
 class IncidentResponse(IncidentCreate):
     id: int

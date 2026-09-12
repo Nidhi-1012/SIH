@@ -180,6 +180,13 @@ async def create_incident_report(inc: IncidentCreate, db: Session = Depends(get_
     if inc.photo_url and len(inc.photo_url) > MAX_PHOTO_BASE64_CHARS:
         raise HTTPException(status_code=413, detail="Photo too large. Please retake or choose a smaller image.")
 
+    if inc.client_report_id:
+        existing = db.query(IncidentReport).filter(
+            IncidentReport.client_report_id == inc.client_report_id
+        ).first()
+        if existing:
+            return existing
+
     # Auto-match to nearest road segment if not explicitly provided
     segment_id = inc.segment_id
     if not segment_id:
@@ -206,6 +213,7 @@ async def create_incident_report(inc: IncidentCreate, db: Session = Depends(get_
         photo_url=inc.photo_url,
         notes=inc.notes,
         reporter=reporter,
+        client_report_id=inc.client_report_id,
         status="Pending"  # Stored as Pending for Admin Approval
     )
     db.add(db_inc)
