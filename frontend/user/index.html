@@ -297,6 +297,7 @@ svg { display: block; flex-shrink: 0; }
 .search-card {
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
   background: var(--c-surface);
   border-radius: var(--r-lg);
   border: 1px solid var(--c-border);
@@ -1736,6 +1737,12 @@ function geocodeToLatLon(query) {
     geocoder.geocode({ address: query, bounds: nerBounds }, (results, status) => {
       if (status === 'OK' && results && results[0]) {
         const loc = results[0].geometry.location;
+        // `bounds` is only a bias hint to the Geocoder API (unlike Places
+        // Autocomplete's strictBounds) -- it still returns a global match if
+        // nothing fits nearby. Reject anything outside the pilot region
+        // outright instead of silently routing to a same-named place
+        // elsewhere in India (e.g. "manja" resolving to Maharashtra).
+        if (!nerBounds.contains(loc)) { resolve(null); return; }
         resolve(`${loc.lat()},${loc.lng()}`);
       } else {
         resolve(null);
@@ -3106,14 +3113,34 @@ async function showRiskExplanation(segmentId) {
     if (!res.ok) throw new Error('risk fetch failed');
     const data = await res.json();
     const sourceLabel = data.risk_source === 'ml_model' ? 'AI Model Prediction' : 'Rule-Based Estimate (model unavailable)';
+    const band = riskBand(data.risk_score);
     body.innerHTML = `
-      <div style="font-weight:700;font-size:15px;color:var(--c-text);margin-bottom:4px;">${data.district} — Risk ${data.risk_score}/100</div>
-      <div style="font-size:11px;color:var(--c-text-3);margin-bottom:12px;">${sourceLabel} · Confidence ${Math.round(data.confidence * 100)}%</div>
-      <div style="font-size:12px;margin-bottom:8px;">Disruption probability: 6h ${Math.round(data.disruption_prob_6h * 100)}% · 12h ${Math.round(data.disruption_prob_12h * 100)}% · 24h ${Math.round(data.disruption_prob_24h * 100)}%</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+        <div style="font-weight:700;font-size:16px;color:var(--c-text);line-height:1.3;">${data.district}</div>
+        <div style="flex:0 0 auto;padding:4px 10px;border-radius:var(--r-pill);font-size:12.5px;font-weight:700;white-space:nowrap;background:${band.color}1a;color:${band.color};">${data.risk_score}/100</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--c-text-2);margin-top:3px;margin-bottom:14px;">${sourceLabel} · Confidence ${Math.round(data.confidence * 100)}%</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--c-bg);border-radius:var(--r-md);padding:10px 0;margin-bottom:16px;">
+        <div style="text-align:center;">
+          <div style="font-size:15px;font-weight:700;color:var(--c-text);">${Math.round(data.disruption_prob_6h * 100)}%</div>
+          <div style="font-size:10px;font-weight:600;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;">6h</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);">
+          <div style="font-size:15px;font-weight:700;color:var(--c-text);">${Math.round(data.disruption_prob_12h * 100)}%</div>
+          <div style="font-size:10px;font-weight:600;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;">12h</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:15px;font-weight:700;color:var(--c-text);">${Math.round(data.disruption_prob_24h * 100)}%</div>
+          <div style="font-size:10px;font-weight:600;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;">24h</div>
+        </div>
+      </div>
+
+      <div style="font-size:10.5px;font-weight:700;color:var(--c-text-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Contributing Factors</div>
       ${data.top_factors.map(f => `
-        <div style="padding:8px 0;border-top:1px solid var(--c-border);">
-          <div style="font-weight:600;font-size:12.5px;">${f.factor}</div>
-          <div style="font-size:11.5px;color:var(--c-text-2);">${f.impact}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--c-border);">
+          <div style="font-weight:600;font-size:12.5px;color:var(--c-text);">${f.factor}</div>
+          <div style="flex:0 0 auto;font-size:11px;font-weight:700;color:${band.color};white-space:nowrap;">${f.impact}</div>
         </div>
       `).join('')}
     `;
@@ -3171,16 +3198,7 @@ function toggleLang() {
    require_role() checks (approve/reject/resolve, driver location, officer
    drivers list all still enforce it); this only keeps the UI honest about
    who's actually signed in. */
-function showDriverModeBadge() {
-  if (document.getElementById('driver-mode-badge')) return;
-  const badge = document.createElement('div');
-  badge.id = 'driver-mode-badge';
-  badge.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1000;background:#34c759;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(52,199,89,0.4);pointer-events:none;letter-spacing:0.3px;';
-  badge.textContent = '🚚 DRIVER MODE';
-  document.body.appendChild(badge);
-}
-
-async function applyRoleBasedUI(wantsDriverMode) {
+async function applyRoleBasedUI() {
   await checkAdminSession(); // populates currentAdminSession as a side effect
   const role = (currentAdminSession && currentAdminSession.user)
     ? (currentAdminSession.user.app_metadata || {}).role
@@ -3194,16 +3212,6 @@ async function applyRoleBasedUI(wantsDriverMode) {
   const adminSidebarBtn = document.querySelector('.sidebar-bottom-admin');
   if (adminSidebarBtn) {
     adminSidebarBtn.style.display = (role === 'officer') ? '' : 'none';
-  }
-
-  // A signed-in user/officer session landing on ?mode=driver isn't really in
-  // driver mode (initDriverLocationSharing() already refuses to share GPS
-  // unless role === 'driver') — drop the badge so the UI doesn't claim it is.
-  // Guests (role === null) keep the badge: "Continue as Guest" on the driver
-  // login page is a deliberately supported unauthenticated driver-mode path.
-  if (wantsDriverMode && (role === 'user' || role === 'officer')) {
-    const badge = document.getElementById('driver-mode-badge');
-    if (badge) badge.remove();
   }
 
   if (window.location.hash === '#admin') {
@@ -3224,11 +3232,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // Always start at home map — clear any stale overlays
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 
-  // Show Driver Mode badge if navigated from /driver/
   const urlParams = new URLSearchParams(window.location.search);
   const wantsDriverMode = urlParams.get('mode') === 'driver';
   if (wantsDriverMode) {
-    showDriverModeBadge();
     initDriverLocationSharing();
   }
 
@@ -3350,7 +3356,7 @@ async function fetchAlertsBackground() {
 </script>
 <!-- RISK EXPLANATION MODAL -->
 <div class="modal-bg" id="risk-modal" onclick="closeRiskModal(event)">
-  <div class="modal-card" onclick="event.stopPropagation()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="card-title">Risk Factor Breakdown</div>
     <div id="risk-modal-body" style="margin-top:12px;font-size:13px;color:var(--c-text-2);">Loading...</div>
     <button class="btn-analyze-route" style="margin-top:16px;" onclick="closeRiskModal()">Close</button>
