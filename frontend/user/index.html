@@ -2657,12 +2657,13 @@ async function loadAlertsList() {
         const sev = (a.severity || 'Caution').toLowerCase();
         const cls = sev === 'critical' || sev === 'urgent' ? 'crit' : 'warn';
         html += `
-          <div class="alert-item ${cls}">
+          <div class="alert-item ${cls}" id="alert-card-${a.alert_id}">
             <div>
               <div class="alert-title">${a.title || 'Road Hazard Warning'}</div>
               <div class="alert-desc">${a.message || 'Drive with caution in this segment.'}</div>
               <div style="font-size:11px;color:var(--c-text-3);margin-top:6px;">${a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : 'Active Now'} · ${a.category || 'Disruption'}</div>
             </div>
+            ${!a.acknowledged ? `<button class="btn-analyze-route" style="margin-top:8px;padding:8px;font-size:12px;" onclick="acknowledgeAlert('${a.alert_id}')">Acknowledge</button>` : ''}
           </div>`;
       });
       container.innerHTML = html;
@@ -2959,6 +2960,19 @@ function triggerBrowserNotification(alertObj) {
       window.focus();
       if (typeof switchScreen === 'function') switchScreen('alerts');
     };
+  }
+}
+
+async function acknowledgeAlert(alertId) {
+  try {
+    const res = await fetch(`/api/v1/alerts/${alertId}/acknowledge`, { method: 'POST' });
+    if (res.ok) {
+      showToast('Alert acknowledged.');
+      const card = document.getElementById(`alert-card-${alertId}`);
+      if (card) card.style.opacity = '0.4';
+    }
+  } catch (e) {
+    showToast('Could not acknowledge alert — check connection.');
   }
 }
 

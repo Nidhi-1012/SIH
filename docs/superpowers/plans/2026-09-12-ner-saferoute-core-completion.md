@@ -1791,13 +1791,13 @@ git commit -m "fix: home screen weather now calls the backend's weather service 
 **Files:**
 - Modify: `frontend/user/index.html`
 
-- [ ] **Step 1: Find where alerts are rendered**
+- [x] **Step 1: Find where alerts are rendered**
 
 Search for the function that builds the alerts list HTML (likely near where
 `fetch('/api/v1/alerts')` is called, around the alerts panel rendering code).
 Find the template literal that builds each alert's HTML card.
 
-- [ ] **Step 2: Add an acknowledge button and handler function**
+- [x] **Step 2: Add an acknowledge button and handler function**
 
 Add this function near the other alert-related functions (search for
 `fetchAlertsBackground` and place it nearby):
@@ -1836,13 +1836,13 @@ change it to:
 Keep the existing "...(existing content)..." exactly as it already is —
 only add the wrapping `id` and the conditional button.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 With the backend running, open the alerts panel, click "Acknowledge" on an
 alert. Expected: `curl http://127.0.0.1:8000/api/v1/alerts` afterward shows
 that alert's `"acknowledged": true`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/user/index.html
