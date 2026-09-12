@@ -1,33 +1,159 @@
 {
-  "timestamp": "2026-09-10 07:17:08",
-  "replay_execution_time_ms": 0.0,
-  "corridor": "Guwahati-Shillong-Silchar & Guwahati-Tawang",
-  "baselines": [
-    {
-      "model_name": "Baseline A (Shortest Distance)",
-      "avg_risk_exposure_pct": 88.5,
-      "stranding_rate_pct": 82.0,
-      "avg_eta_minutes": 240.0,
-      "reliability_pct": 18.0,
-      "proactive_reroutes": 0
-    },
-    {
-      "model_name": "Baseline B (Reactive Closure Only)",
-      "avg_risk_exposure_pct": 54.2,
-      "stranding_rate_pct": 28.0,
-      "avg_eta_minutes": 295.0,
-      "reliability_pct": 68.5,
-      "proactive_reroutes": 12
-    }
+  "computed_at": "2026-09-12T05:24:13.795595Z",
+  "methodology": "Every number below comes from calling the same backend/app/services/{risk_model_service,graph_routing_service}.py code the live API uses, against the real segments in data/pilot_corridor.json, under a simulated corridor-wide monsoon event (95.0mm/24h rainfall applied to every segment). No numbers in this file are hand-typed.",
+  "risk_score_source": "ml_model",
+  "monsoon_rainfall_24h_mm": 95.0,
+  "segments_blocked_by_scenario": [
+    "SEG-NH13-01",
+    "SEG-NH13-02",
+    "SEG-NH6-03",
+    "SEG-NH6-06"
   ],
-  "our_model": {
-    "model_name": "NER-LINK AI (Predictive + Priority Aware)",
-    "avg_risk_exposure_pct": 18.2,
+  "baselines": {
+    "naive_shortest_distance": {
+      "pairs_evaluated": 6,
+      "pairs_with_no_available_route": 0,
+      "pairs_routed_through_confirmed_closure": 5,
+      "stranding_rate_pct": 83.3,
+      "avg_risk_exposure": 58.3,
+      "avg_eta_minutes": 314.3,
+      "per_pair_detail": [
+        {
+          "pair": "Guwahati -> Silchar",
+          "routed": true,
+          "distance_km": 248.1,
+          "eta_minutes": 496.0,
+          "avg_risk_score": 64.0,
+          "drives_through_confirmed_closure": true
+        },
+        {
+          "pair": "Guwahati -> Shillong",
+          "routed": true,
+          "distance_km": 83.9,
+          "eta_minutes": 154.0,
+          "avg_risk_score": 56.3,
+          "drives_through_confirmed_closure": true
+        },
+        {
+          "pair": "Guwahati -> Jowai",
+          "routed": true,
+          "distance_km": 131.9,
+          "eta_minutes": 250.0,
+          "avg_risk_score": 59.2,
+          "drives_through_confirmed_closure": true
+        },
+        {
+          "pair": "Nongpoh -> Silchar",
+          "routed": true,
+          "distance_km": 208.2,
+          "eta_minutes": 435.0,
+          "avg_risk_score": 71.4,
+          "drives_through_confirmed_closure": true
+        },
+        {
+          "pair": "Umiam -> Silchar",
+          "routed": true,
+          "distance_km": 177.0,
+          "eta_minutes": 360.0,
+          "avg_risk_score": 68.0,
+          "drives_through_confirmed_closure": true
+        },
+        {
+          "pair": "Guwahati -> Tezpur",
+          "routed": true,
+          "distance_km": 175.0,
+          "eta_minutes": 191.0,
+          "avg_risk_score": 30.9,
+          "drives_through_confirmed_closure": false
+        }
+      ]
+    },
+    "reactive_closure_only": {
+      "pairs_evaluated": 6,
+      "pairs_with_no_available_route": 5,
+      "pairs_routed_through_confirmed_closure": 0,
+      "stranding_rate_pct": 0.0,
+      "avg_risk_exposure": 30.9,
+      "avg_eta_minutes": 191.0,
+      "per_pair_detail": [
+        {
+          "pair": "Guwahati -> Silchar",
+          "routed": false,
+          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+        },
+        {
+          "pair": "Guwahati -> Shillong",
+          "routed": false,
+          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+        },
+        {
+          "pair": "Guwahati -> Jowai",
+          "routed": false,
+          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+        },
+        {
+          "pair": "Nongpoh -> Silchar",
+          "routed": false,
+          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+        },
+        {
+          "pair": "Umiam -> Silchar",
+          "routed": false,
+          "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+        },
+        {
+          "pair": "Guwahati -> Tezpur",
+          "routed": true,
+          "distance_km": 175.0,
+          "eta_minutes": 191.0,
+          "avg_risk_score": 30.9,
+          "drives_through_confirmed_closure": false
+        }
+      ]
+    }
+  },
+  "ner_link_ai_risk_weighted": {
+    "pairs_evaluated": 6,
+    "pairs_with_no_available_route": 5,
+    "pairs_routed_through_confirmed_closure": 0,
     "stranding_rate_pct": 0.0,
-    "avg_eta_minutes": 255.0,
-    "reliability_pct": 94.8,
-    "proactive_reroutes": 98,
-    "risk_reduction_vs_baseline_a": "79.4%",
-    "reliability_improvement": "+76.8% pts"
-  }
+    "avg_risk_exposure": 30.9,
+    "avg_eta_minutes": 191.0,
+    "per_pair_detail": [
+      {
+        "pair": "Guwahati -> Silchar",
+        "routed": false,
+        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+      },
+      {
+        "pair": "Guwahati -> Shillong",
+        "routed": false,
+        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+      },
+      {
+        "pair": "Guwahati -> Jowai",
+        "routed": false,
+        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+      },
+      {
+        "pair": "Nongpoh -> Silchar",
+        "routed": false,
+        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+      },
+      {
+        "pair": "Umiam -> Silchar",
+        "routed": false,
+        "reason": "No path avoiding the blocked segment(s) exists in the pilot corridor graph"
+      },
+      {
+        "pair": "Guwahati -> Tezpur",
+        "routed": true,
+        "distance_km": 175.0,
+        "eta_minutes": 191.0,
+        "avg_risk_score": 30.9,
+        "drives_through_confirmed_closure": false
+      }
+    ]
+  },
+  "risk_exposure_reduction_vs_naive_baseline_pct": 47.0
 }

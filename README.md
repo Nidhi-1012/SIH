@@ -93,6 +93,23 @@ npm run dev
 
 ## Machine Learning & Benchmark Evidence
 
-* **Risk Reduction:** –79.4% average route hazard reduction compared to traditional shortest-path algorithms (OSM / Google Maps baseline).
-* **Stranding Prevention:** 0% stranding rate in monsoon landslide simulation benchmarks.
-* **Reliability:** 94.8% on-time delivery reliability under degraded road conditions.
+Computed by `ml/benchmark_replay.py` (run it yourself: `python ml/benchmark_replay.py`
+from the repo root) — it calls the same routing and risk-scoring code the live
+API uses, against the real pilot-corridor segments, under a simulated
+corridor-wide monsoon event. Full per-pair results in
+`ml/artifacts/benchmark_results.json`. These are not hand-typed figures.
+
+* **Stranding avoided:** a naive shortest-distance router (no live road-condition
+  awareness) drives straight through a confirmed closure on 83.3% of the
+  benchmark's origin-destination pairs during the simulated event. A
+  closure-aware router — ours included — strands on 0%.
+* **Risk exposure reduction:** 47.0% lower average route risk score than the
+  naive baseline, on the pairs both could actually route.
+* **Known limitation, not hidden:** on the current 10-segment pilot corridor,
+  which is a single linear/tree road network with no alternate bypass routes,
+  risk-weighted routing and simple closure-avoidance produce identical
+  results — there's no second path to choose between yet, so "smarter
+  rerouting" isn't distinguishable from "avoid the closed road" in this
+  dataset. Demonstrating a genuine AI-selected detour (not just closure
+  avoidance) needs at least one real alternate-route segment added to the
+  pilot corridor data.
